@@ -1,0 +1,491 @@
+/* Основные стили */
+body {
+    background: #f5f7fb;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Шапка */
+.header {
+    background: #3f66e0;
+    color: #fff;
+    height: 72px;
+    padding: 0 145px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* Вкладки */
+.tabs-container {
+    background: #f8f9fa;
+    border-bottom: 3px solid #dee2e6;
+    padding: 0 165px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-tabs {
+    border: none;
+    gap: 4px;
+}
+
+.nav-tabs .nav-link {
+    color: black;
+    padding: 8px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link.active {
+    background: #3f66e0;
+    color: #fff;
+    border-color: #3f66e0;
+}
+
+/* Основной контент */
+.main-content {
+    padding: 30px 165px 0;
+}
+
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 15px;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* Кнопки действий */
+.top-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 30px;
+    margin-top: -70px;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+.btn-primary {
+    background: #3f66e0;
+    border: 1px solid #3f66e0;
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+/* Фильтры */
+.filters-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.filters-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 180px;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 8px;
+    display: block;
+    text-transform: uppercase;
+}
+
+.form-select-sm, .form-control-sm {
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
+
+.search-group {
+    flex: 2;
+    min-width: 300px;
+}
+
+.apply-btn {
+    height: 40px;
+    min-width: 120px;
+}
+
+/* Кнопки добавления */
+.add-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.btn-success {
+    background: #10b981;
+    border: 1px solid #10b981;
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+.btn-purple {
+    background: #8b5cf6;
+    border: 1px solid #8b5cf6;
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+/* Таблица */
+.table-container {
+    margin-bottom: 40px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+table {
+    min-width: 1800px;
+    margin: 0;
+}
+
+th, td {
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 13px;
+    padding: 12px 8px;
+}
+
+th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+th.sticky-col,
+td.sticky-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 3;
+    min-width: 300px;
+    text-align: left;
+    border-right: 1px solid #e5e7eb;
+}
+
+td {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Заголовки дней */
+.day-header {
+    min-width: 120px;
+    padding: 10px 4px !important;
+    vertical-align: middle;
+    height: 50px;
+    position: relative;
+}
+
+.day-header > div {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.day-header .day-number {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.day-header .week-day {
+    font-size: 11px;
+    margin-left: 5px;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* Ячейки с причинами и часами */
+.day-cell.reason-cell.small-cell {
+    min-width: 40px;
+    max-width: 40px;
+    width: 40px;
+    padding: 4px !important;
+}
+
+.day-cell.hours-cell {
+    min-width: 80px;
+    max-width: 80px;
+    width: 80px;
+    padding: 4px !important;
+}
+
+/* Стили для выпадающих списков причин */
+.day-cell.reason-cell.small-cell .reason-select {
+    width: 100%;
+    height: 30px;
+    padding: 0 4px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background-color: white;
+    color: #333;
+    cursor: pointer;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* Стили для инпутов часов */
+.day-cell.hours-cell .hours-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background-color: white;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Состояния фокуса */
+.day-cell.hours-cell .hours-input:focus,
+.day-cell.reason-cell.small-cell .reason-select:focus {
+    outline: none;
+    border-color: #3f66e0;
+    box-shadow: 0 0 0 2px rgba(63, 102, 224, 0.1);
+}
+
+/* Сегодняшний день */
+.day-header.today {
+    background-color: rgba(63, 102, 224, 0.1);
+}
+
+.day-cell.today {
+    background-color: rgba(63, 102, 224, 0.1);
+    border-left: 1px solid rgba(108, 117, 125, 0.21);
+    border-right: 1px solid rgba(108, 117, 125, 0.21);
+}
+
+.day-cell.today .hours-input,
+.day-cell.today .reason-select {
+    background-color: #e3f2fd;
+    border-color: #3f66e0;
+}
+
+/* Выходные дни */
+.day-cell.weekend {
+    background-color: #F6F8FF;
+}
+
+.day-cell.weekend .hours-input,
+.day-cell.weekend .reason-select {
+    background-color: #f0f0f0;
+    color: #6c757d;
+}
+
+.day-header.weekend .week-day {
+    color: #000000;
+    font-weight: 700;
+}
+
+/* Информация о сотруднике */
+.employee-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.employee-name {
+    font-weight: 600;
+    color: #6581EE;
+    font-size: 14px;
+}
+
+.employee-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.employee-id {
+    font-size: 12px;
+    color: #0032FF;
+    font-weight: 700;
+}
+
+.employee-department {
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Кнопки действий */
+.action-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0 solid #e5e7eb;
+    border-radius: 5px;
+    background: #FFF4E5;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.action-btn-danger {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0 solid #e5e7eb;
+    border-radius: 5px;
+    background: #FEECEB;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.action-btn:hover,
+.action-btn-danger:hover {
+    background: #ffffff;
+}
+
+/* Футер */
+footer {
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    font-size: 12px;
+    height: 40px;
+    border-top: 3px solid #dee2e6;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .header, .tabs-container, .main-content {
+        padding: 0 20px;
+    }
+
+    .day-header {
+        min-width: 90px;
+    }
+
+    .day-cell.reason-cell.small-cell {
+        min-width: 30px;
+        max-width: 30px;
+        width: 30px;
+    }
+
+    .day-cell.hours-cell {
+        min-width: 60px;
+        max-width: 60px;
+        width: 60px;
+    }
+
+    .day-cell.reason-cell.small-cell .reason-select {
+        font-size: 11px;
+        height: 28px;
+    }
+
+    .day-cell.hours-cell .hours-input {
+        font-size: 12px;
+        height: 28px;
+        padding: 0 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .day-header {
+        min-width: 70px;
+    }
+
+    .day-cell.reason-cell.small-cell {
+        min-width: 25px;
+        max-width: 25px;
+        width: 25px;
+    }
+
+    .day-cell.hours-cell {
+        min-width: 45px;
+        max-width: 45px;
+        width: 45px;
+    }
+
+    .day-header .day-number {
+        font-size: 13px;
+    }
+
+    .day-header .week-day {
+        font-size: 10px;
+    }
+}
