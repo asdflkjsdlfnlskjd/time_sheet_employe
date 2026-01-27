@@ -56,7 +56,8 @@ body {
 }
 
 /* Основной контент */
-.main-content {
+
+main {
     padding: 30px 165px 0;
 }
 
