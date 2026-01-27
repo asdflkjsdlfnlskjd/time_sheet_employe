@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Табель</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{asset('main.css')}}">
+    <link rel="stylesheet" href="{{asset('css/main.css')}}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
 </head>
 
