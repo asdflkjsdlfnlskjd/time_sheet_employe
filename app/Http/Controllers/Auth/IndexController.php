@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
- class IndexController
+use App\Http\Controllers\Controller;
+
+class IndexController extends Controller
 {
     public function __invoke()
     {

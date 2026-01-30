@@ -16,8 +16,7 @@
     </div>
     <div class="persons d-flex align-items-center gap-3 p-4">
         <div class="text-end">
-            <div class="fw-medium">Иван Иванов</div>
-            <small class="opacity-75">Менеджер по персоналу</small>
+            <div class= fw-medium">Менеджер по персоналу</div>
         </div>
         <div class="logo-circle d-flex align-items-center justify-content-center">ИИ</div>
     </div>

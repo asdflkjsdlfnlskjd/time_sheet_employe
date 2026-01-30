@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('password');
-            $table->integer('role_id');
+            $table->text('role');
             $table->timestamps();
         });
     }
