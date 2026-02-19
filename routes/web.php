@@ -3,23 +3,29 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\IndexController as AuthIndexController;
+use App\Http\Controllers\Main\MainController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\DepartmentController;
 
-// Маршруты для аутентификации администратора
-Route::group(['namespace' => 'App\Http\Controllers\Auth'], function () {
-    Route::get('/login', [AuthIndexController::class, '__invoke'])->name('admin.login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.process');
-    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
-});
+// Вход
+Route::get('/login', [AuthIndexController::class, '__invoke'])->name('admin.login');
+Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.process');
+Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-// Маршруты для main и dashboard
-Route::group(['namespace' => 'App\Http\Controllers\Main'], function () {
-    Route::get('/main', 'IndexController')->name('admin.main.index');
-});
+// Основные страницы
+Route::get('/main', [MainController::class, 'index'])->name('admin.main.index');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard.index');
 
-Route::group(['namespace' => 'App\Http\Controllers\Dashboard'], function () {
-    Route::get('/dashboard', 'IndexController')->name('admin.dashboard.index'); // Это имя используется
-});
+// Маршруты для сотрудников
+Route::post('/employees', [EmployeeController::class, 'store'])->name('admin.employees.store');
+Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('admin.employees.destroy');
 
+// Маршруты для отделов
+Route::post('/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
+Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('admin.departments.destroy');
+
+// Редирект
 Route::get('/', function () {
     return redirect()->route('admin.login');
 });

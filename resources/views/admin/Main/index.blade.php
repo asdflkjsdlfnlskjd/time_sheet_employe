@@ -4,21 +4,36 @@
     <meta charset="UTF-8">
     <title>Табель</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{asset('css/main.css')}}">
+    <link rel="stylesheet" href="{{ asset('css/main.css') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 </head>
 
 <body>
 <!-- HEADER -->
 <header class="header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
-        <img src="{{asset('images/logo.png')}}" alt="TimeFlow" width="122" height="82">
+        <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
     </div>
+
     <div class="persons d-flex align-items-center gap-3 p-4">
         <div class="text-end">
-            <div class= fw-medium">Менеджер по персоналу</div>
+            <div class="fw-medium">{{ Session::get('admin_name') }}</div>
         </div>
-        <div class="logo-circle d-flex align-items-center justify-content-center">ИИ</div>
+        <div class="logo-circle d-flex align-items-center justify-content-center">
+            @php
+                $name = Session::get('admin_name');
+                $initials = '';
+                $nameParts = explode(' ', $name);
+                foreach ($nameParts as $part) {
+                    if (!empty($part)) {
+                        $initials .= mb_substr($part, 0, 1);
+                    }
+                }
+                $initials = mb_strtoupper($initials);
+            @endphp
+            {{ $initials }}
+        </div>
     </div>
 </header>
 
@@ -26,10 +41,10 @@
 <nav class="tabs-container">
     <ul class="nav nav-tabs">
         <li class="nav-item">
-            <a class="nav-link active" href="{{ route('admin.main.index')}}">Табель</a>
+            <a class="nav-link active" href="{{ route('admin.main.index') }}">Табель</a>
         </li>
         <li class="nav-item">
-           <a class="nav-link" href="{{route('admin.dashboard.index')}}">Статистика</a>
+            <a class="nav-link" href="{{ route('admin.dashboard.index') }}">Статистика</a>
         </li>
     </ul>
 </nav>
@@ -40,6 +55,32 @@
     <p class="page-subtitle">
         Внесение и редактирование данных о рабочем времени сотрудников
     </p>
+
+    <!-- Сообщения об успехе/ошибке -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     <!-- Top Action Buttons -->
     <div class="top-actions">
@@ -89,30 +130,40 @@
 
     <!-- Filters -->
     <div class="filters-card">
-        <div class="filters-row">
+        <form method="GET" action="{{ route('admin.main.index') }}" class="filters-row">
             <div class="filter-group">
                 <label class="filter-label">Период</label>
-                <select class="form-select form-select-sm">
-                    <option>Март 2025</option>
+                <select class="form-select form-select-sm" name="month">
+                    @foreach($months as $num => $name)
+                        <option value="{{ $num }}" {{ $currentMonth == $num ? 'selected' : '' }}>
+                            {{ $name }} {{ $currentYear }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">Отдел</label>
-                <select class="form-select form-select-sm">
-                    <option>Все отделы</option>
+                <select class="form-select form-select-sm" name="department">
+                    <option value="all">Все отделы</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" {{ $departmentId == $dept->id ? 'selected' : '' }}>
+                            {{ $dept->name }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
             <div class="search-group">
                 <label class="filter-label">Поиск сотрудника</label>
-                <input class="form-control form-control-sm" placeholder="Введите имя сотрудника">
+                <input class="form-control form-control-sm" name="search"
+                       placeholder="Введите имя сотрудника" value="{{ $search ?? '' }}">
             </div>
 
             <div class="filter-group">
-                <button class="btn btn-primary apply-btn">Применить</button>
+                <button type="submit" class="btn btn-primary apply-btn">Применить</button>
             </div>
-        </div>
+        </form>
     </div>
 
     <!-- Add Buttons -->
@@ -128,294 +179,122 @@
     <!-- Table -->
     <div class="table-container">
         <div class="table-wrapper">
-            <?php
-            // Получаем текущую дату
-            $today = new DateTime();
-            $currentMonth = $today->format('m');
-            $currentYear = $today->format('Y');
-            $currentDay = $today->format('d');
-
-            // Количество дней в текущем месяце
-            $daysInMonth = $today->format('t');
-
-            // Массив сокращенных названий дней недели на русском
-            $weekDaysShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-
-            // Массив полных названий дней недели
-            $weekDaysFull = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-
-            // Название текущего месяца на русском
-            $months = [
-                '01' => 'Январь', '02' => 'Февраль', '03' => 'Март', '04' => 'Апрель',
-                '05' => 'Май', '06' => 'Июнь', '07' => 'Июль', '08' => 'Август',
-                '09' => 'Сентябрь', '10' => 'Октябрь', '11' => 'Ноябрь', '12' => 'Декабрь'
-            ];
-            $currentMonthName = $months[$currentMonth];
-
-            // Массив уважительных причин с сокращениями
-            $reasons = [
-                '' => '-',
-                'vacation' => 'ОТ', // Отпуск
-                'sick_leave' => 'Б', // Больничный
-                'business_trip' => 'К', // Командировка
-                'day_off' => 'ОГ', // Отгул
-                'remote' => 'У', // Удалёнка
-                'late' => 'ОП', // Опаздал
-                'other' => 'Д' // Другое
-            ];
-            ?>
-
             <table class="table">
                 <thead>
                 <tr>
                     <th class="sticky-col">Сотрудник</th>
-                    <!-- Динамические дни месяца с днями недели -->
-                    <?php for ($day = 1; $day <= $daysInMonth; $day++):
-                        // Создаем дату для текущего дня
-                        $currentDate = new DateTime("$currentYear-$currentMonth-$day");
-                        // Получаем номер дня недели (1-7, где 1-понедельник, 7-воскресенье)
-                        $weekDayNumber = $currentDate->format('N');
-                        // Получаем сокращенное название дня недели
-                        $weekDayShort = $weekDaysShort[$weekDayNumber - 1];
-                        // Проверяем, является ли день сегодняшним
-                        $isToday = ($day == $currentDay);
-                        // Проверяем, является ли день выходным (суббота или воскресенье)
-                        $isWeekend = ($weekDayNumber == 6 || $weekDayNumber == 7);
-                        // CSS классы для стилизации
-                        $dayClass = '';
-                        if ($isToday) {
-                            $dayClass .= ' today';
-                        }
-                        if ($isWeekend) {
-                            $dayClass .= ' weekend';
-                        }
-                        ?>
-                    <th class="day-header<?= $dayClass ?>" title="<?= $weekDaysFull[$weekDayNumber - 1] ?>" colspan="2">
-                        <div class="day-number"><?= $day ?>
-                            <div class="week-day "><?= $weekDayShort ?></div>
-                        </div>
-                    </th>
-                    <?php endfor; ?>
+                    @for ($day = 1; $day <= $daysInMonth; $day++)
+                        @php
+                            $currentDate = new DateTime("$currentYear-$currentMonth-$day");
+                            $weekDayNumber = $currentDate->format('N');
+                            $weekDayShort = $weekDaysShort[$weekDayNumber - 1];
+                            $isToday = ($day == $currentDay);
+                            $isWeekend = ($weekDayNumber == 6 || $weekDayNumber == 7);
+                            $dayClass = '';
+                            if ($isToday) $dayClass .= ' today';
+                            if ($isWeekend) $dayClass .= ' weekend';
+                        @endphp
+                        <th class="day-header{{ $dayClass }}" title="{{ $weekDaysFull[$weekDayNumber - 1] }}" colspan="2">
+                            <div class="day-number">{{ $day }}
+                                <div class="week-day">{{ $weekDayShort }}</div>
+                            </div>
+                        </th>
+                    @endfor
                     <th>Дни/м</th>
                     <th>Общ.часы/м</th>
                     <th>Действия</th>
                 </tr>
                 </thead>
                 <tbody>
-                <?php
-                $employees = [
-                    ['name' => 'Иванов Иван Иванович', 'id' => '№10', 'dept' => 'Разработка', 'days' => '20', 'hours' => '148.0'],
-                    ['name' => 'Петров Иван Дмитриевич', 'id' => '№10000', 'dept' => 'Маркетинг', 'days' => '21', 'hours' => '158.0'],
-                    ['name' => 'Сидоров Олег Геннадьевич', 'id' => '№10000', 'dept' => 'Процесс', 'days' => '19', 'hours' => '168.2'],
-                    ['name' => 'Сидоров Олег Геннадьевич', 'id' => '№10000', 'dept' => 'Процесс', 'days' => '19', 'hours' => '168.2'],
-                    ['name' => 'Сидоров Олег Геннадьевич', 'id' => '№10000', 'dept' => 'Процесс', 'days' => '19', 'hours' => '168.2'],
-                    ['name' => 'Сухарев Петр Михайлович', 'id' => '№52', 'dept' => 'Методические издания', 'days' => '21', 'hours' => '159.8']
-                ];
-
-                foreach ($employees as $employee):
-                    ?>
-                <tr>
-                    <td class="sticky-col">
-                        <div class="employee-info">
-                            <span class="employee-name"><?= $employee['name'] ?></span>
-                            <div class="employee-details">
-                                    <?php if ($employee['id']): ?>
-                                <span class="employee-id"><?= $employee['id'] ?></span>
-                                <?php endif; ?>
-                                <span class="employee-department"><?= $employee['dept'] ?></span>
+                @forelse($employees as $employee)
+                    <tr>
+                        <td class="sticky-col">
+                            <div class="employee-info">
+                                <span class="employee-name">
+                                    {{ $employee->last_name }} {{ $employee->first_name }} {{ $employee->middle_name }}
+                                </span>
+                                <div class="employee-details">
+                                    <span class="employee-id">№{{ $employee->tab_number }}</span>
+                                    <span class="employee-department">{{ $employee->department->name ?? 'Без отдела' }}</span>
+                                </div>
                             </div>
-                        </div>
-                    </td>
+                        </td>
 
-                    <!-- Динамически генерируем ячейки для каждого дня месяца -->
-                        <?php for ($day = 1; $day <= $daysInMonth; $day++):
-                        $currentDate = new DateTime("$currentYear-$currentMonth-$day");
-                        $weekDayNumber = $currentDate->format('N');
-                        $isWeekend = ($weekDayNumber == 6 || $weekDayNumber == 7);
-                        $isToday = ($day == $currentDay);
+                        @for ($day = 1; $day <= $daysInMonth; $day++)
+                            @php
+                                $currentDate = new DateTime("$currentYear-$currentMonth-$day");
+                                $weekDayNumber = $currentDate->format('N');
+                                $isWeekend = ($weekDayNumber == 6 || $weekDayNumber == 7);
+                                $isToday = ($day == $currentDay);
+                                $cellClass = '';
+                                if ($isToday) $cellClass .= ' today';
+                                if ($isWeekend) $cellClass .= ' weekend';
+                                $defaultValue = $isWeekend ? '0' : '8';
+                            @endphp
+                            <td class="day-cell reason-cell small-cell{{ $cellClass }}">
+                                <select class="reason-select" data-day="{{ $day }}" data-employee="{{ $employee->id }}">
+                                    @foreach($reasons as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="day-cell hours-cell{{ $cellClass }}">
+                                <input type="text" class="hours-input" value="{{ $defaultValue }}"
+                                       data-day="{{ $day }}" data-employee="{{ $employee->id }}"
+                                       data-weekday="{{ $weekDaysShort[$weekDayNumber - 1] }}"
+                                       title="День {{ $day }}, {{ $weekDaysFull[$weekDayNumber - 1] }}">
+                            </td>
+                        @endfor
 
-                        // CSS классы для ячеек
-                        $cellClass = '';
-                        if ($isToday) {
-                            $cellClass .= ' today';
-                        }
-                        if ($isWeekend) {
-                            $cellClass .= ' weekend';
-                        }
+                        <td><strong class="total-days">0</strong></td>
+                        <td><strong class="total-hours">0.0</strong></td>
+                        <td>
+                            <button class="action-btn" title="Редактировать">
+                                <svg width="14" height="14" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                    <rect width="22.1603" height="22.1603" fill="url(#pattern0_67_53)"/>
+                                    <defs>
+                                        <pattern id="pattern0_67_53" patternContentUnits="objectBoundingBox" width="1" height="1">
+                                            <use xlink:href="#image0_67_53" transform="scale(0.01)"/>
+                                        </pattern>
+                                        <image id="image0_67_53" width="100" height="100" preserveAspectRatio="none" xlink:href="data:image/png;base64,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"/>
+                                    </defs>
+                                </svg>
+                            </button>
 
-                        // Значение по умолчанию (8 для рабочих дней, 0 для выходных)
-                        $defaultValue = $isWeekend ? '0' : '8';
-
-                        // Для сегодняшнего дня можно установить специальное значение
-                        if ($isToday) {
-                            $defaultValue = '8'; // или другое значение
-                        }
-                        ?>
-                        <!-- Ячейка для выпадающего списка причин (СЛЕВА) -->
-                    <td class="day-cell reason-cell small-cell<?= $cellClass ?>">
-                        <select class="reason-select" data-day="<?= $day ?>">
-                                <?php foreach ($reasons as $value => $label): ?>
-                            <option value="<?= $value ?>"><?= $label ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-
-                    <!-- Ячейка для ввода часов (СПРАВА) -->
-                    <td class="day-cell hours-cell<?= $cellClass ?>">
-                        <input type="text" class="hours-input" value="<?= $defaultValue ?>"
-                               data-day="<?= $day ?>"
-                               data-weekday="<?= $weekDaysShort[$weekDayNumber - 1] ?>"
-                               title="День <?= $day ?>, <?= $weekDaysFull[$weekDayNumber - 1] ?>">
-                    </td>
-                    <?php endfor; ?>
-
-                    <td><strong class="total-days"><?= $employee['days'] ?></strong></td>
-                    <td><strong class="total-hours"><?= $employee['hours'] ?></strong></td>
-                    <td>
-                        <button class="action-btn" title="Редактировать">
-                            <svg width="14" height="14" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                                <rect width="22.1603" height="22.1603" fill="url(#pattern0_67_53)"/>
-                                <defs>
-                                    <pattern id="pattern0_67_53" patternContentUnits="objectBoundingBox" width="1" height="1">
-                                        <use xlink:href="#image0_67_53" transform="scale(0.01)"/>
-                                    </pattern>
-                                    <image id="image0_67_53" width="100" height="100" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAH/0lEQVR4AeydXYwTVRTHz5lOWTRqTEBoV2NA9slEo0J8oC1KRESFED529wVMNIpE3kyM+uyTJj6aQEBjfOBDQb4MIUqyke1ugokYH3wTBTXtqjzoA4rb6RzPnX4we2famWk70+n0Tnpn7r1z5k7n/+u5X9NONVBLrBRQQGKFA0ABUUBipkDM3o7ykB4BmZ/NPF6Zzr5fLWa+r1zMXK8UMzfni5lrRjFzxpjO7qGpe+7wcyoFxI9KbWzo6+UrjZnRs5qJlxDhdQJ8GDVcgoAjGuD9ALgFEA4Yun6lWsy+Ch6L5rFf7W6jAHvCE0YKvwGizW3MrF0MaxkB7J+fyX5C58ZGrEyXlQLiIoqfrMrM6EbuEp1nT1jqx75hoxHsrtx141AjLW8VEFkRH2maWnE3UPUYw1jsw9xhwqLvEu2KYwdn8D5eq1cgBXD91b8AU5MEdDPQgTZjrr7eoeLSO21ZVjQcIFbRyV6lc6UvgXBbp1AQYVkV9R2ySgqIrEiAdLpQPt8NFD52s3w6BURWxCVtTI9u4fBjpZj9oTKdedJu0g0U9q6H7GWJuAIiVGgTjJnMTq7vTwDSKgR4EBE/lM07hkLacrksBURWxJa2YJjaYURKN7KJyLVn1RkU80aj3MZWAWkoIW3dYYCJqL0hmTaTQaGwt/3aPLgeUUDqQtg3xkx2Bzk8A0hD2KfnS4fttnLcgoLaVm4fPLvERHBBPl4BkRSpwcAjC6sp9gzAl1P58n7J3DXpp0vMMIhSeEIuQAGxKWIUs9vJdMCoeUah9JHN1DPq5SmIcHLR2tJ3ckEKSF0RyzMIj3bjGfWimptWnsK9tj9TPDPcNLRFBgmI7W33NtrCM0wEfEUP6BnyO7M8xTait9oWhJ2YK1+TbUV66IFYMJye0VE1JQR1CxYU0dAT/o1E4+lc+aKbncgbaiAtYAjP8N2ACxH9hDTPfenGohV64fcv2tkPLZA2MLqqpoxiZkJMs1SLmcvzF7OP2cW3ZontGS7xoQRiiN6Us5oSntEdjOnRl4jwiJhmIcBHNQ0/cNG8bdbQAQkVBtBBRL6PCLUFwby9FvO/HiogfJduG3+C3bq23XuGBIMADA5v+0dRsxwaIJZnAB6Txhld96aMmdEXuSu7wDMYRBUJX9Dzc+dqMvtfDwUQYybzPIsmzdqCgPFayud0iJukFgyTDtmrqTqM3Tx+OeJ2jFde4oFYMAhO8CCv+dUbYjo8URg7GAJWooH4giFUCBjC8IzGW0gskEGEIaAkEsigwkgkkMhhIO7qtAEXAOSQKA/pC4xc6agsajfpxAAxipnnuPcUXW9KeEaPYQiQiQBiwQD4PLKubUgwEgEkUhiEFSQY10PwDAFDhIH2kMhhAE3qhfJJIVxYYWCBJBGGgDyQQAYAhtC2ozBwQJIMQxAcKCBJhzFQQBjGszy1HU3XVvSmImjABQA5DISH1GGcjGSc0UcYAk7sgUQOg2Ai7K6tEL5ViDWQvsBYVzrVSqwo8mMLZBhhCOCxBDKsMGIJZJhhxA7IsMPwBCIMogoKRk3pWLQhdRgRDfponqfQJ/Q+96Zq8jvXfQdig9H8uTHf+QvnS2wkYGiTcYUh8PQViIIhECwMfQNSmc5uqs9NKc+wMekLEAEDkMTclIJhgyGikQOJHIamxbYBFwDkECmQvsDIlU7LFx3ndGRAFAx/H4NIgCgY/mAIq9CBOGEAUFi/zxDjDNFmDFg1JUA0QqhAFIyGzP63oQFRMPxDsFuGAkTBsEscLN5zIApGMACydU+BRA4DtXF9gBtwGYZI9wxIZTb7TKTTIQJGvnRGXESSQk+AWDBMOoWA0cxNJRSG+GB1DUTBEDL2LnQFRMHoHYhGSR0DiRuMxgUN+rYjIApGeNgDA1EwwoMhSg4ERMEQkoUbfAOx/nNJdW3DpcGl+wJiwSDztBpnsGIhvzyBVIqZ9eCEYTKcrh6laogHRjoe/kX/IcI2PYEjcL8c2wLhG0kaAXzM4ttH4AJGCM8oZBgA2/UOHosHCVraAqnMZlZr1r9V1q6YAYlvFO7Tu3j8tvXwL/mBkeJOH/FE4ZDDECprYtUqpEztqQX7kOZNgqvQ4dK2miqUznZYbKIOawuEwNxgv1quukb4jvhpFnaLPd9PfDA9w8+V9damJRCaWrGY24+18ukQcRGDOh4EigVDbsBFNQXaTq7+lGfYRG4JxFg0v47Fv81m24xyvm8oCkZTNl+RlkDANBe2H1JxfqAoGJJoPpItgWgaLGg/3MpqB0XBcFPMO88VCF26d4lp4iPehwO4QVEwoOPFFUi1QhsQbz3lHzwWtDX0CoaHWB67XYEAVdu2H25lWlDQ/Izk3hTQTQDcqnpT4GtxB4KaZ/vhVjoCjiDe8iwSXVvSJqz/YAK1+FHAAYRm7xvjA1dy6OplwQDaoTwjmIwOIKZZDVxdyac0gX4BhE1ef4AlHzcs6XbX6QDCE4iBqyse0Rt8km8J6V0ifDq9eG4snZ+b4jz1CqiAEwhC3qsM4rkTRLrM1dJ7BLhR11J36fnymnRu7q10oXQB10DFqwy1310BBxAE+MfdFH7mG1UHeXJxUjdweSo3tzpdmHsznS99hWt/+7fFMSo7oAIOIPyJ38tl/MTbMhAcZ0B7U1gdYw94gNuEPXwD6VNcX7rONuoVggIOIOITz+Kv4u2oXiiPp/LlA5j740oI51ZFuijgAOJio7IiVEABiVBsP6dSQPyoFKHN/wAAAP//AI1KQgAAAAZJREFUAwBhmc4jMCTzxQAAAABJRU5ErkJggg=="/>
-                                </defs>
-                            </svg>
-
-                        </button>
-
-                        <button class="action-btn-danger" title="Удалить">
-                            <svg width="11" height="14" viewBox="0 0 11 14" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M1.86643 2.38419e-06L5.24143 5.44603H5.34371L8.71871 2.38419e-06H10.5852L6.46871 6.54546L10.5852 13.0909H8.71871L5.34371 7.74716H5.24143L1.86643 13.0909H-4.43831e-05L4.21871 6.54546L-4.43831e-05 2.38419e-06H1.86643Z"
-                                    fill="#F44359"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
+                            <form action="{{ route('admin.employees.destroy', $employee->id) }}" method="POST"
+                                  onsubmit="return confirm('Вы уверены, что хотите удалить сотрудника?')" style="display: inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="action-btn-danger" title="Удалить">
+                                    <svg width="11" height="14" viewBox="0 0 11 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1.86643 2.38419e-06L5.24143 5.44603H5.34371L8.71871 2.38419e-06H10.5852L6.46871 6.54546L10.5852 13.0909H8.71871L5.34371 7.74716H5.24143L1.86643 13.0909H-4.43831e-05L4.21871 6.54546L-4.43831e-05 2.38419e-06H1.86643Z" fill="#F44359"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="{{ $daysInMonth * 2 + 4 }}" class="text-center py-5">
+                            <p class="text-muted mb-2">Нет сотрудников</p>
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#employeeModal">
+                                Добавить первого сотрудника
+                            </button>
+                        </td>
+                    </tr>
+                @endforelse
                 </tbody>
             </table>
         </div>
     </div>
-
-    <style>
-
-    </style>
-
-    <!-- JavaScript для обновления итогов -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Функция для подсчета рабочих дней (не выходных)
-            function calculateWorkingDays() {
-                const rows = document.querySelectorAll('tbody tr');
-
-                rows.forEach(row => {
-                    let workingDays = 0;
-                    let totalHours = 0;
-
-                    // Получаем все поля ввода часов в строке
-                    const inputs = row.querySelectorAll('.hours-input');
-
-                    inputs.forEach((input, index) => {
-                        const value = parseFloat(input.value) || 0;
-                        const cell = input.closest('.day-cell');
-                        const isWeekend = cell.classList.contains('weekend');
-
-                        // Получаем соответствующий выпадающий список причин
-                        const reasonSelect = row.querySelectorAll('.reason-select')[index];
-                        const reason = reasonSelect.value;
-
-                        // Подсчитываем только рабочие дни с часами > 0 и без уважительной причины
-                        if (value > 0 && !isWeekend && !reason) {
-                            workingDays++;
-                        }
-
-                        totalHours += value;
-                    });
-
-                    // Обновляем итоговые значения
-                    const totalDaysElement = row.querySelector('.total-days');
-                    const totalHoursElement = row.querySelector('.total-hours');
-
-                    if (totalDaysElement) {
-                        totalDaysElement.textContent = workingDays;
-                    }
-                    if (totalHoursElement) {
-                        totalHoursElement.textContent = totalHours.toFixed(1);
-                    }
-                });
-            }
-
-            // Обработчик изменения значений в полях ввода часов
-            document.querySelectorAll('.hours-input').forEach(input => {
-                input.addEventListener('change', calculateWorkingDays);
-                input.addEventListener('input', calculateWorkingDays);
-
-                // Автовыделение текста при клике
-                input.addEventListener('click', function () {
-                    this.select();
-                });
-            });
-
-            // Обработчик изменения значений в выпадающих списках причин
-            document.querySelectorAll('.reason-select').forEach(select => {
-                select.addEventListener('change', calculateWorkingDays);
-            });
-
-            // Инициализация подсчета
-            calculateWorkingDays();
-
-            // Обновление времени каждую минуту
-            function updateCurrentDayHighlight() {
-                const today = new Date();
-                const currentDay = today.getDate();
-                const currentMonth = today.getMonth() + 1;
-                const currentYear = today.getFullYear();
-
-                // Получаем месяц и год из таблицы
-                const tableMonth = <?= $currentMonth ?>;
-                const tableYear = <?= $currentYear ?>;
-
-                // Если текущий месяц/год совпадает с таблицей, подсвечиваем сегодняшний день
-                if (currentMonth == tableMonth && currentYear == tableYear) {
-                    // Убираем подсветку у всех дней
-                    document.querySelectorAll('.day-header.today, .day-cell.today').forEach(el => {
-                        el.classList.remove('today');
-                    });
-
-                    // Добавляем подсветку текущему дню
-                    // Теперь reason-cell идет первым (нечетные индексы), hours-cell вторым (четные индексы)
-                    // Индексы начинаются с 2 (после sticky-col)
-                    const reasonCellIndex = (currentDay * 2);
-                    const hoursCellIndex = reasonCellIndex + 1;
-
-                    const reasonCells = document.querySelectorAll(`.day-cell.reason-cell:nth-child(${reasonCellIndex})`);
-                    const hoursCells = document.querySelectorAll(`.day-cell.hours-cell:nth-child(${hoursCellIndex})`);
-
-                    reasonCells.forEach(cell => cell.classList.add('today'));
-                    hoursCells.forEach(cell => cell.classList.add('today'));
-
-                    // Также подсвечиваем заголовок
-                    const dayHeader = document.querySelector(`.day-header:nth-child(${currentDay + 1})`);
-                    if (dayHeader) dayHeader.classList.add('today');
-                }
-            }
-
-            // Вызываем функцию подсветки сегодняшнего дня
-            updateCurrentDayHighlight();
-        });
-    </script>
 </main>
 
 <footer>
     © 2026 Табель - Система учета рабочего времени. Все права защищены.
 </footer>
 
-<!-- MODALS -->
-<div class="modal fade" id="employeeModal" tabindex="-1">
+<!-- MODAL: Добавить сотрудника -->
+<div class="modal fade" id="employeeModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom-0 pb-0">
@@ -423,69 +302,84 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-1">
-                <form id="employeeForm" class="modal-form">
-                    <!-- Фамилия (полная ширина) -->
+                <form method="POST" action="{{ route('admin.employees.store') }}" id="employeeForm">
+                    @csrf
+                    <!-- Фамилия -->
                     <div class="form-field mb-3">
-                        <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Фамилия</label>
-                        <input type="text" class="form-control form-control-sm" placeholder="Иванов" required>
+                        <label class="form-label fw-medium text-dark d-block mb-1">Фамилия</label>
+                        <input type="text" name="last_name" class="form-control form-control-sm @error('last_name') is-invalid @enderror"
+                               placeholder="Иванов" value="{{ old('last_name') }}" required>
+                        @error('last_name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
-                    <!-- Имя и Отчество в одну строку -->
+                    <!-- Имя и Отчество -->
                     <div class="form-field mb-3">
                         <div class="row g-2">
-                            <!-- Имя (левая часть) -->
                             <div class="col-6">
-                                <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Имя</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="Иван" required>
+                                <label class="form-label fw-medium text-dark d-block mb-1">Имя</label>
+                                <input type="text" name="first_name" class="form-control form-control-sm @error('first_name') is-invalid @enderror"
+                                       placeholder="Иван" value="{{ old('first_name') }}" required>
+                                @error('first_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
-                            <!-- Отчество (правая часть) -->
                             <div class="col-6">
-                                <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Отчество</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="Иванович" required>
+                                <label class="form-label fw-medium text-dark d-block mb-1">Отчество</label>
+                                <input type="text" name="middle_name" class="form-control form-control-sm @error('middle_name') is-invalid @enderror"
+                                       placeholder="Иванович" value="{{ old('middle_name') }}">
+                                @error('middle_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
 
                     <!-- Табельный номер -->
                     <div class="form-field mb-3">
-                        <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">
-                            Табельный номер
-                        </label>
+                        <label class="form-label fw-medium text-dark d-block mb-1">Табельный номер</label>
                         <div class="d-flex align-items-center gap-1">
-                            <input type="text" class="form-control form-control-sm" placeholder="Введите номер"
+                            <input type="text" name="tab_number" class="form-control form-control-sm @error('tab_number') is-invalid @enderror"
+                                   placeholder="Введите номер" value="{{ old('tab_number') }}"
                                    pattern=".{2,6}" title="Табельный номер должен содержать от 2 до 6 символов"
                                    style="flex: 1;" required>
                             <small class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">
                                 от 2 до 6 символов
                             </small>
                         </div>
+                        @error('tab_number')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Отдел -->
                     <div class="form-field mb-4">
-                        <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Отдел</label>
-                        <select class="form-select form-select-sm" required>
-                            <option value="" disabled selected>Выберите отдел</option>
-                            <option value="development">Разработка</option>
-                            <option value="marketing">Маркетинг</option>
-                            <option value="process">Процесс</option>
-                            <option value="methodical">Методические издания</option>
-                            <option value="hr">HR</option>
-                            <option value="finance">Финансы</option>
+                        <label class="form-label fw-medium text-dark d-block mb-1">Отдел</label>
+                        <select name="department_id" class="form-select form-select-sm @error('department_id') is-invalid @enderror" required>
+                            <option value="" disabled {{ old('department_id') ? '' : 'selected' }}>Выберите отдел</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->name }}
+                                </option>
+                            @endforeach
                         </select>
+                        @error('department_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </form>
             </div>
             <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" data-bs-dismiss="modal" style="font-size: 0.875rem;">Отмена</button>
-                <button type="submit" form="employeeForm" class="btn btn-primary btn-sm px-3 py-1" style="font-size: 0.875rem;">Применить</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="employeeForm" class="btn btn-primary btn-sm px-3 py-1">Применить</button>
             </div>
         </div>
     </div>
 </div>
 
-
-<div class="modal fade" id="departmentModal" tabindex="-1">
+<!-- MODAL: Добавить отдел -->
+<div class="modal fade" id="departmentModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom-0 pb-0">
@@ -493,64 +387,140 @@
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-1">
-                <form id="departmentForm" class="modal-form">
+                <form method="POST" action="{{ route('admin.departments.store') }}" id="departmentForm">
+                    @csrf
                     <!-- Название отдела -->
                     <div class="form-field mb-3">
-                        <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Название отдела</label>
-                        <input type="text" class="form-control form-control-sm" placeholder="Например, Отдел продаж" required>
+                        <label class="form-label fw-medium text-dark d-block mb-1">Название отдела</label>
+                        <input type="text" name="name" class="form-control form-control-sm @error('name') is-invalid @enderror"
+                               placeholder="Например, Отдел продаж" value="{{ old('name') }}" required>
+                        @error('name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Руководитель отдела -->
                     <div class="form-field mb-4">
-                        <label class="form-label fw-medium text-dark d-block mb-1" style="font-size: 0.875rem;">Руководитель отдела</label>
-                        <select class="form-select form-select-sm" required>
-                            <option value="" disabled selected>Выберите руководителя</option>
-                            <?php
-                            // Пример данных - замените на реальных сотрудников
-                            $managers = [
-                                'Иванов Иван Иванович',
-                                'Петров Петр Петрович',
-                                'Сидорова Анна Сергеевна',
-                                'Кузнецов Дмитрий Алексеевич'
-                            ];
-                            foreach ($managers as $manager) {
-                                echo '<option value="' . strtolower(str_replace(' ', '_', $manager)) . '">' . $manager . '</option>';
-                            }
-                            ?>
+                        <label class="form-label fw-medium text-dark d-block mb-1">Руководитель отдела</label>
+                        <select name="manager_id" class="form-select form-select-sm @error('manager_id') is-invalid @enderror">
+                            <option value="" {{ old('manager_id') ? '' : 'selected' }}>Не выбран</option>
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}" {{ old('manager_id') == $emp->id ? 'selected' : '' }}>
+                                    {{ $emp->last_name }} {{ $emp->first_name }} {{ $emp->middle_name }}
+                                </option>
+                            @endforeach
                         </select>
+                        @error('manager_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </form>
             </div>
             <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" data-bs-dismiss="modal" style="font-size: 0.875rem;">Отмена</button>
-                <button type="submit" form="departmentForm" class="btn btn-primary btn-sm px-3 py-1" style="font-size: 0.875rem;">Применить</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="departmentForm" class="btn btn-primary btn-sm px-3 py-1">Применить</button>
             </div>
         </div>
     </div>
 </div>
 
-
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Скрипты -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Make hours inputs editable
-        document.querySelectorAll('.hours-input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.select();
-            });
+        // Функция для подсчета рабочих дней
+        function calculateWorkingDays() {
+            const rows = document.querySelectorAll('tbody tr');
 
-            input.addEventListener('dblclick', function() {
-                this.focus();
+            rows.forEach(row => {
+                let workingDays = 0;
+                let totalHours = 0;
+
+                const inputs = row.querySelectorAll('.hours-input');
+
+                inputs.forEach((input, index) => {
+                    const value = parseFloat(input.value) || 0;
+                    const cell = input.closest('.day-cell');
+                    const isWeekend = cell.classList.contains('weekend');
+
+                    const reasonSelect = row.querySelectorAll('.reason-select')[index];
+                    const reason = reasonSelect ? reasonSelect.value : '';
+
+                    if (value > 0 && !isWeekend && !reason) {
+                        workingDays++;
+                    }
+
+                    totalHours += value;
+                });
+
+                const totalDaysElement = row.querySelector('.total-days');
+                const totalHoursElement = row.querySelector('.total-hours');
+
+                if (totalDaysElement) {
+                    totalDaysElement.textContent = workingDays;
+                }
+                if (totalHoursElement) {
+                    totalHoursElement.textContent = totalHours.toFixed(1);
+                }
             });
+        }
+
+        // Обработчики для часов
+        document.querySelectorAll('.hours-input').forEach(input => {
+            input.addEventListener('change', calculateWorkingDays);
+            input.addEventListener('input', calculateWorkingDays);
+            input.addEventListener('click', function() { this.select(); });
         });
 
-        // Table row hover effect
+        // Обработчики для причин
+        document.querySelectorAll('.reason-select').forEach(select => {
+            select.addEventListener('change', calculateWorkingDays);
+        });
+
+        // Инициализация подсчета
+        calculateWorkingDays();
+
+        // Подсветка сегодняшнего дня
+        const today = new Date();
+        const currentDay = today.getDate();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
+
+        if (currentMonth == {{ $currentMonth }} && currentYear == {{ $currentYear }}) {
+            document.querySelectorAll('.day-header.today, .day-cell.today').forEach(el => {
+                el.classList.remove('today');
+            });
+
+            const reasonCellIndex = (currentDay * 2) + 1;
+            const hoursCellIndex = reasonCellIndex + 1;
+
+            document.querySelectorAll(`.day-cell.reason-cell:nth-child(${reasonCellIndex})`).forEach(cell => {
+                cell.classList.add('today');
+            });
+
+            document.querySelectorAll(`.day-cell.hours-cell:nth-child(${hoursCellIndex})`).forEach(cell => {
+                cell.classList.add('today');
+            });
+
+            const dayHeader = document.querySelector(`.day-header:nth-child(${currentDay + 1})`);
+            if (dayHeader) dayHeader.classList.add('today');
+        }
+
+        // Автоматическое открытие модалок при ошибках
+        @if(session('modal') == 'employee' || $errors->hasAny(['last_name', 'first_name', 'tab_number', 'department_id']))
+        var employeeModal = new bootstrap.Modal(document.getElementById('employeeModal'));
+        employeeModal.show();
+        @endif
+
+        @if(session('modal') == 'department' || $errors->has('name'))
+        var departmentModal = new bootstrap.Modal(document.getElementById('departmentModal'));
+        departmentModal.show();
+        @endif
+
+        // Hover эффект для строк
         document.querySelectorAll('tbody tr').forEach(row => {
             row.addEventListener('mouseenter', function() {
                 this.style.backgroundColor = '#f8f9fa';
             });
-
             row.addEventListener('mouseleave', function() {
                 this.style.backgroundColor = '';
             });

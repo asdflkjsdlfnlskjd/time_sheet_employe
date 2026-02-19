@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Статистика</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{asset('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css')}}" rel="stylesheet">
     <link rel="stylesheet" href="{{asset('css/dashboard.css')}}">
     <link rel="stylesheet" href="{{asset('css/main.css')}}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{asset('css/dashboard.css')}}">
+    <link rel="stylesheet" href=" {{asset('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css')}}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <!-- ПОДКЛЮЧИТЕ Chart.js ЗДЕСЬ -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src=" {{asset('https://cdn.jsdelivr.net/npm/chart.js')}}" defer></script>
     <style>
         /* Добавьте эти стили для контейнера графика */
         .chart-canvas-container {
@@ -26,12 +27,25 @@
     <div class="d-flex align-items-center gap-2">
         <img src="{{asset('images/logo.png')}}" alt="TimeFlow" width="122" height="82">
     </div>
+
     <div class="persons d-flex align-items-center gap-3 p-4">
         <div class="text-end">
-            <div class="fw-medium">Иван Иванов</div>
-            <small class="opacity-75">Менеджер по персоналу</small>
+            <div class="fw-medium">{{ Session::get('admin_name') }}</div>
         </div>
-        <div class="logo-circle d-flex align-items-center justify-content-center">ИИ</div>
+        <div class="logo-circle d-flex align-items-center justify-content-center">
+            @php
+                $name = Session::get('admin_name');
+                $initials = '';
+                $nameParts = explode(' ', $name);
+                foreach ($nameParts as $part) {
+                    if (!empty($part)) {
+                        $initials .= mb_substr($part, 0, 1);
+                    }
+                }
+                 $initials = mb_strtoupper($initials);
+            @endphp
+            {{ $initials }}
+        </div>
     </div>
 </header>
 
