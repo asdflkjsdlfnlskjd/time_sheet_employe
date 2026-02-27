@@ -1,56 +1,62 @@
 <?php
+// app/Http/Controllers/Admin/DepartmentController.php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
-use App\Models\Employee;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
-    /**
-     * Сохранить новый отдел
-     */
     public function store(Request $request)
     {
-        // Валидация
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|unique:departments,name|max:255',
+        if (!Auth::check()) {
+            return redirect('/login');
+        }
+
+        $admin = Auth::user();
+
+        if ($admin->role !== 'super_admin') {
+            return redirect()->back()
+                ->with('error', 'Только супер-администратор может создавать отделы');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:departments',
             'manager_id' => 'nullable|exists:employees,id',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput()
-                ->with('modal', 'department');
-        }
+        Department::create($validated);
 
-        // Создание отдела
-        Department::create([
-            'name' => $request->name,
-            'manager_id' => $request->manager_id,
-        ]);
-
-        return redirect()->back()->with('success', 'Отдел успешно добавлен');
+        return redirect('/main') // Вместо route('admin.main.index')
+        ->with('success', 'Отдел успешно создан');
     }
 
-    /**
-     * Удалить отдел
-     */
     public function destroy($id)
     {
+        if (!Auth::check()) {
+            return redirect('/login');
+        }
+
+        $admin = Auth::user();
+
+        if ($admin->role !== 'super_admin') {
+            return redirect()->back()
+                ->with('error', 'Только супер-администратор может удалять отделы');
+        }
+
         $department = Department::findOrFail($id);
 
-        // Проверяем, есть ли сотрудники в отделе
         if ($department->employees()->count() > 0) {
-            return redirect()->back()->with('error', 'Нельзя удалить отдел, в котором есть сотрудники');
+            return redirect()->back()
+                ->with('error', 'Нельзя удалить отдел, в котором есть сотрудники');
         }
 
         $department->delete();
 
-        return redirect()->back()->with('success', 'Отдел удален');
+        return redirect('/main') // Вместо route('admin.main.index')
+        ->with('success', 'Отдел успешно удален');
     }
 }

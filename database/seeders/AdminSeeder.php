@@ -1,42 +1,46 @@
 <?php
+// database/seeders/AdminSeeder.php
 
 namespace Database\Seeders;
 
-use App\Models\Admin;
 use Illuminate\Database\Seeder;
+use App\Models\Admin;
+use App\Models\Employee;
 use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        Admin::create([
-            'name' => 'Главный админимтратор',
-            'password' => Hash::make('1'), // Измените на ваш пароль
-            'role' => 'main_super',
-        ]);
+        // Супер-админ (Иван Иванов)
+        $superAdminEmployee = Employee::where('email', 'ivan@company.com')->first();
+        if ($superAdminEmployee) {
+            Admin::create([
+                'name' => 'super_admin',
+                'password' => Hash::make('123'),
+                'employee_id' => $superAdminEmployee->id,
+                'role' => 'super_admin',
+                'is_active' => true,
+            ]);
+        }
 
-        // Можно добавить больше администраторов
-        Admin::create([
-            'name' => 'Менеджер',
-            'password' => Hash::make('1'),
-            'role' => 'manager',
-        ]);
-        Admin::create([
-            'name' => 'HR',
-            'password' => Hash::make('1'),
-            'role' => 'human_resources',
-        ]);
-        Admin::create([
-            'name' => 'Бухгалтерия ',
-            'password' => Hash::make('1'),
-            'role' => 'bookkeeping_accounting ',
-        ]);
-        Admin::create([
-            'name' => 'Начальник цифрового отдела',
-            'password' => Hash::make('1'),
-            'role' => 'chief_digital_officer ',
-        ]);
+        // Администраторы отделов (руководители)
+        $managers = Employee::whereIn('position', [
+            'Руководитель IT отдела',
+            'Руководитель HR отдела',
+            'Главный бухгалтер'
+        ])->get();
 
+        foreach ($managers as $manager) {
+            Admin::create([
+                'name' => 'admin_' . strtolower(str_replace(' ', '_', $manager->first_name)),
+                'password' => Hash::make('123'),
+                'employee_id' => $manager->id,
+                'role' => 'department_admin',
+                'is_active' => true,
+            ]);
+        }
+
+        $this->command->info('Администраторы созданы успешно!');
     }
 }

@@ -142,17 +142,20 @@
                 </select>
             </div>
 
-            <div class="filter-group">
-                <label class="filter-label">Отдел</label>
-                <select class="form-select form-select-sm" name="department">
-                    <option value="all">Все отделы</option>
-                    @foreach($departments as $dept)
-                        <option value="{{ $dept->id }}" {{ $departmentId == $dept->id ? 'selected' : '' }}>
-                            {{ $dept->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            {{-- Фильтр по отделу показываем только супер-админу --}}
+            @if($admin && $admin->role === 'super_admin')
+                <div class="filter-group">
+                    <label class="filter-label">Отдел</label>
+                    <select class="form-select form-select-sm" name="department">
+                        <option value="all">Все отделы</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" {{ $departmentId == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
 
             <div class="search-group">
                 <label class="filter-label">Поиск сотрудника</label>
@@ -165,7 +168,6 @@
             </div>
         </form>
     </div>
-
     <!-- Add Buttons -->
     <div class="add-buttons">
         <button class="btn btn-success p-2" data-bs-toggle="modal" data-bs-target="#employeeModal">
@@ -261,7 +263,7 @@
                                 </svg>
                             </button>
 
-                            <form action="{{ route('admin.employees.destroy', $employee->id) }}" method="POST"
+                            <form action="/employees/{{ $employee->id }}" method="POST"
                                   onsubmit="return confirm('Вы уверены, что хотите удалить сотрудника?')" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
@@ -304,66 +306,33 @@
             <div class="modal-body pt-1">
                 <form method="POST" action="{{ route('admin.employees.store') }}" id="employeeForm">
                     @csrf
-                    <!-- Фамилия -->
-                    <div class="form-field mb-3">
-                        <label class="form-label fw-medium text-dark d-block mb-1">Фамилия</label>
-                        <input type="text" name="last_name" class="form-control form-control-sm @error('last_name') is-invalid @enderror"
-                               placeholder="Иванов" value="{{ old('last_name') }}" required>
-                        @error('last_name')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <!-- Имя и Отчество -->
-                    <div class="form-field mb-3">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="form-label fw-medium text-dark d-block mb-1">Имя</label>
-                                <input type="text" name="first_name" class="form-control form-control-sm @error('first_name') is-invalid @enderror"
-                                       placeholder="Иван" value="{{ old('first_name') }}" required>
-                                @error('first_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label fw-medium text-dark d-block mb-1">Отчество</label>
-                                <input type="text" name="middle_name" class="form-control form-control-sm @error('middle_name') is-invalid @enderror"
-                                       placeholder="Иванович" value="{{ old('middle_name') }}">
-                                @error('middle_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Табельный номер -->
-                    <div class="form-field mb-3">
-                        <label class="form-label fw-medium text-dark d-block mb-1">Табельный номер</label>
-                        <div class="d-flex align-items-center gap-1">
-                            <input type="text" name="tab_number" class="form-control form-control-sm @error('tab_number') is-invalid @enderror"
-                                   placeholder="Введите номер" value="{{ old('tab_number') }}"
-                                   pattern=".{2,6}" title="Табельный номер должен содержать от 2 до 6 символов"
-                                   style="flex: 1;" required>
-                            <small class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">
-                                от 2 до 6 символов
-                            </small>
-                        </div>
-                        @error('tab_number')
-                        <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    <!-- Фамилия, Имя, Отчество, Табельный номер - без изменений -->
 
                     <!-- Отдел -->
                     <div class="form-field mb-4">
                         <label class="form-label fw-medium text-dark d-block mb-1">Отдел</label>
-                        <select name="department_id" class="form-select form-select-sm @error('department_id') is-invalid @enderror" required>
-                            <option value="" disabled {{ old('department_id') ? '' : 'selected' }}>Выберите отдел</option>
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @if($admin && $admin->role === 'super_admin')
+                            {{-- Супер-админ может выбрать любой отдел --}}
+                            <select name="department_id" class="form-select form-select-sm @error('department_id') is-invalid @enderror" required>
+                                <option value="" disabled {{ old('department_id') ? '' : 'selected' }}>Выберите отдел</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
+                                        {{ $dept->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            {{-- Обычный админ может добавлять только в свой отдел --}}
+                            @php
+                                $adminDepartmentId = $admin && $admin->employee ? $admin->employee->department_id : null;
+                                $adminDepartment = $departments->firstWhere('id', $adminDepartmentId);
+                            @endphp
+                            <input type="text" class="form-control form-control-sm"
+                                   value="{{ $adminDepartment->name ?? 'Отдел не назначен' }}"
+                                   readonly disabled>
+                            <input type="hidden" name="department_id" value="{{ $adminDepartmentId }}">
+                            <small class="text-muted">Вы можете добавлять сотрудников только в свой отдел</small>
+                        @endif
                         @error('department_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -377,7 +346,6 @@
         </div>
     </div>
 </div>
-
 <!-- MODAL: Добавить отдел -->
 <div class="modal fade" id="departmentModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">

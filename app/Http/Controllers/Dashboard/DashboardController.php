@@ -1,32 +1,23 @@
 <?php
+// app/Http/Controllers/Dashboard/DashboardController.php
 
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
-use App\Models\Department;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Проверка авторизации
-        if (!Session::has('admin_id')) {
-            return redirect()->route('admin.login')->with('error', 'Пожалуйста, войдите в систему.');
+        // ПРОВЕРЯЕМ АВТОРИЗАЦИЮ
+        if (!Auth::check()) {
+            return redirect('/login');
         }
 
-        // Данные для статистики
-        $totalEmployees = Employee::count();
-        $totalDepartments = Department::count();
+        $admin = Auth::user();
 
-        // Сотрудники по отделам
-        $employeesByDepartment = Department::withCount('employees')->get();
-
-        return view('admin.dashboard.index', compact(
-            'totalEmployees',
-            'totalDepartments',
-            'employeesByDepartment'
-        ));
+        return view('admin.dashboard.index', compact('admin'));
     }
 }

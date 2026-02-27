@@ -1,4 +1,5 @@
 <?php
+// database/migrations/[timestamp]_create_time_records_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -10,21 +11,23 @@ return new class extends Migration
     {
         Schema::create('time_records', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('employee_id');
+            $table->foreignId('employee_id')
+                ->constrained('employees')
+                ->cascadeOnDelete();
             $table->date('date');
-            $table->decimal('hours', 4, 1)->default(0); // Часы (например, 8.0, 4.5)
-            $table->string('reason')->nullable(); // Причина отсутствия (vacation, sick_leave и т.д.)
-            $table->text('notes')->nullable(); // Примечания
+            $table->time('check_in')->nullable();
+            $table->time('check_out')->nullable();
+            $table->decimal('hours', 4, 1)->default(0);
+            $table->enum('status', [
+                'present', 'absent', 'late',
+                'early_leave', 'vacation', 'sick_leave', 'day_off'
+            ])->default('present');
+            $table->text('notes')->nullable();
             $table->timestamps();
 
-            // Уникальность - одна запись на сотрудника в день
             $table->unique(['employee_id', 'date']);
-
-            // Внешний ключ
-            $table->foreign('employee_id')
-                ->references('id')
-                ->on('employees')
-                ->onDelete('cascade');
+            $table->index('date');
+            $table->index('status');
         });
     }
 

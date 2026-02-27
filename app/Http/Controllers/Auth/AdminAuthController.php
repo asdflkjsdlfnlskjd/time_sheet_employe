@@ -1,56 +1,43 @@
 <?php
+// app/Http/Controllers/Auth/AdminAuthController.php
 
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class AdminAuthController extends Controller
 {
-    // Обработка входа
     public function login(Request $request)
     {
-        // Валидация данных
-        $request->validate([
+        $credentials = $request->validate([
             'name' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Поиск администратора
-        $admin = Admin::where('name', $request->name)->first();
+        // Явно указываем использовать guard 'web' (который теперь использует admins)
+        if (Auth::guard('web')->attempt($credentials)) {
+            $request->session()->regenerate();
 
-        // Проверка существования администратора
-        if (!$admin) {
-            // Если администратор не найден
-            return back()->withErrors([
-                'name' => 'Пользователь с таким логином не найден.',
-            ])->withInput($request->only('name'));
+            // Сохраняем имя админа в сессии
+            session(['admin_name' => Auth::guard('web')->user()->name]);
+
+            return redirect('/main');
         }
 
-        // Проверка пароля
-        if (!Hash::check($request->password, $admin->password)) {
-            // Если пароль неверный
-            return back()->withErrors([
-                'password' => 'Неверный пароль.',
-            ])->withInput($request->only('name'));
-        }
-
-        // Если все хорошо - сохраняем администратора в сессии
-        Session::put('admin_id', $admin->id);
-        Session::put('admin_name', $admin->name);
-        Session::put('admin_role', $admin->role);
-
-        // Редирект на дашборд
-        return redirect()->route('admin.dashboard.index');
+        return back()->withErrors([
+            'name' => 'Неверные учетные данные',
+        ])->onlyInput('name');
     }
 
-    // Выход
-    public function logout()
+    public function logout(Request $request)
     {
-        Session::forget(['admin_id', 'admin_name', 'admin_role']);
-        return redirect()->route('admin.login');
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
     }
 }
