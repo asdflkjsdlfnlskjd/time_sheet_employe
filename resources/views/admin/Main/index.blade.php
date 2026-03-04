@@ -2,11 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Табель</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/main.css') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="../../../../js/main.js"></script>
+
 </head>
 
 <body>
@@ -33,6 +37,14 @@
                 $initials = mb_strtoupper($initials);
             @endphp
             {{ $initials }}
+        </div>
+        <div class="dropdown-menu-custom">
+            <form method="POST" action="{{ route('admin.logout') }}">
+                @csrf
+                <button type="submit" class="dropdown-item-custom">
+                    <i class="fas fa-sign-out-alt me-2"></i> Выйти
+                </button>
+            </form>
         </div>
     </div>
 </header>
@@ -142,7 +154,6 @@
                 </select>
             </div>
 
-            {{-- Фильтр по отделу показываем только супер-админу --}}
             @if($admin && $admin->role === 'super_admin')
                 <div class="filter-group">
                     <label class="filter-label">Отдел</label>
@@ -168,6 +179,7 @@
             </div>
         </form>
     </div>
+
     <!-- Add Buttons -->
     <div class="add-buttons">
         <button class="btn btn-success p-2" data-bs-toggle="modal" data-bs-target="#employeeModal">
@@ -209,7 +221,7 @@
                 </thead>
                 <tbody>
                 @forelse($employees as $employee)
-                    <tr>
+                    <tr data-employee-id="{{ $employee->id }}">
                         <td class="sticky-col">
                             <div class="employee-info">
                                 <span class="employee-name">
@@ -251,15 +263,10 @@
                         <td><strong class="total-days">0</strong></td>
                         <td><strong class="total-hours">0.0</strong></td>
                         <td>
-                            <button class="action-btn" title="Редактировать">
-                                <svg width="14" height="14" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                                    <rect width="22.1603" height="22.1603" fill="url(#pattern0_67_53)"/>
-                                    <defs>
-                                        <pattern id="pattern0_67_53" patternContentUnits="objectBoundingBox" width="1" height="1">
-                                            <use xlink:href="#image0_67_53" transform="scale(0.01)"/>
-                                        </pattern>
-                                        <image id="image0_67_53" width="100" height="100" preserveAspectRatio="none" xlink:href="data:image/png;base64,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"/>
-                                    </defs>
+                            <button class="action-btn edit-btn" title="Редактировать">
+                                <svg width="14" height="14" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M16.5 2.5L20.5 6.5L7.5 19.5H3.5V15.5L16.5 2.5Z" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M13.5 5.5L17.5 9.5" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
                             </button>
 
@@ -300,19 +307,55 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold fs-5">Добавить сотрудника</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex align-items-center gap-2">
+
+                    <h5 class="modal-title fw-bold fs-5">Добавить сотрудника</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-1">
                 <form method="POST" action="{{ route('admin.employees.store') }}" id="employeeForm">
                     @csrf
-                    <!-- Фамилия, Имя, Отчество, Табельный номер - без изменений -->
 
-                    <!-- Отдел -->
-                    <div class="form-field mb-4">
-                        <label class="form-label fw-medium text-dark d-block mb-1">Отдел</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Фамилия <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name" class="form-control form-control-sm @error('last_name') is-invalid @enderror"
+                               placeholder="Введите фамилию" value="{{ old('last_name') }}" required>
+                        @error('last_name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Имя <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name" class="form-control form-control-sm @error('first_name') is-invalid @enderror"
+                               placeholder="Введите имя" value="{{ old('first_name') }}" required>
+                        @error('first_name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Отчество</label>
+                        <input type="text" name="middle_name" class="form-control form-control-sm @error('middle_name') is-invalid @enderror"
+                               placeholder="Введите отчество" value="{{ old('middle_name') }}">
+                        @error('middle_name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Табельный номер <span class="text-danger">*</span></label>
+                        <input type="text" name="tab_number" class="form-control form-control-sm @error('tab_number') is-invalid @enderror"
+                               placeholder="Например: 12345" value="{{ old('tab_number') }}" required>
+                        @error('tab_number')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Отдел <span class="text-danger">*</span></label>
                         @if($admin && $admin->role === 'super_admin')
-                            {{-- Супер-админ может выбрать любой отдел --}}
                             <select name="department_id" class="form-select form-select-sm @error('department_id') is-invalid @enderror" required>
                                 <option value="" disabled {{ old('department_id') ? '' : 'selected' }}>Выберите отдел</option>
                                 @foreach($departments as $dept)
@@ -322,16 +365,15 @@
                                 @endforeach
                             </select>
                         @else
-                            {{-- Обычный админ может добавлять только в свой отдел --}}
                             @php
                                 $adminDepartmentId = $admin && $admin->employee ? $admin->employee->department_id : null;
                                 $adminDepartment = $departments->firstWhere('id', $adminDepartmentId);
                             @endphp
-                            <input type="text" class="form-control form-control-sm"
+                            <input type="text" class="form-control form-control-sm bg-light"
                                    value="{{ $adminDepartment->name ?? 'Отдел не назначен' }}"
                                    readonly disabled>
                             <input type="hidden" name="department_id" value="{{ $adminDepartmentId }}">
-                            <small class="text-muted">Вы можете добавлять сотрудников только в свой отдел</small>
+                            <small class="text-muted d-block mt-1">Вы можете добавлять сотрудников только в свой отдел</small>
                         @endif
                         @error('department_id')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -357,7 +399,6 @@
             <div class="modal-body pt-1">
                 <form method="POST" action="{{ route('admin.departments.store') }}" id="departmentForm">
                     @csrf
-                    <!-- Название отдела -->
                     <div class="form-field mb-3">
                         <label class="form-label fw-medium text-dark d-block mb-1">Название отдела</label>
                         <input type="text" name="name" class="form-control form-control-sm @error('name') is-invalid @enderror"
@@ -367,7 +408,6 @@
                         @enderror
                     </div>
 
-                    <!-- Руководитель отдела -->
                     <div class="form-field mb-4">
                         <label class="form-label fw-medium text-dark d-block mb-1">Руководитель отдела</label>
                         <select name="manager_id" class="form-select form-select-sm @error('manager_id') is-invalid @enderror">
@@ -392,108 +432,78 @@
     </div>
 </div>
 
-<!-- Скрипты -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Функция для подсчета рабочих дней
-        function calculateWorkingDays() {
-            const rows = document.querySelectorAll('tbody tr');
+<!-- MODAL: Редактировать сотрудника -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold fs-5">Редактировать сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-1">
+                <form method="POST" action="" id="editEmployeeForm">
+                    @csrf
+                    @method('PUT')
 
-            rows.forEach(row => {
-                let workingDays = 0;
-                let totalHours = 0;
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Фамилия <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name" id="edit_last_name"
+                               class="form-control form-control-sm @error('last_name') is-invalid @enderror"
+                               placeholder="Введите фамилию" required>
+                        <div class="invalid-feedback">Пожалуйста, укажите фамилию</div>
+                    </div>
 
-                const inputs = row.querySelectorAll('.hours-input');
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Имя <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name" id="edit_first_name"
+                               class="form-control form-control-sm @error('first_name') is-invalid @enderror"
+                               placeholder="Введите имя" required>
+                        <div class="invalid-feedback">Пожалуйста, укажите имя</div>
+                    </div>
 
-                inputs.forEach((input, index) => {
-                    const value = parseFloat(input.value) || 0;
-                    const cell = input.closest('.day-cell');
-                    const isWeekend = cell.classList.contains('weekend');
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Отчество</label>
+                        <input type="text" name="middle_name" id="edit_middle_name"
+                               class="form-control form-control-sm @error('middle_name') is-invalid @enderror"
+                               placeholder="Введите отчество">
+                    </div>
 
-                    const reasonSelect = row.querySelectorAll('.reason-select')[index];
-                    const reason = reasonSelect ? reasonSelect.value : '';
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Табельный номер <span class="text-danger">*</span></label>
+                        <input type="text" name="tab_number" id="edit_tab_number"
+                               class="form-control form-control-sm @error('tab_number') is-invalid @enderror"
+                               placeholder="Например: 12345" required>
+                        <div class="invalid-feedback">Пожалуйста, укажите табельный номер</div>
+                    </div>
 
-                    if (value > 0 && !isWeekend && !reason) {
-                        workingDays++;
-                    }
+                    <div class="mb-4">
+                        <label class="form-label fw-medium text-dark d-block mb-1">Отдел <span class="text-danger">*</span></label>
+                        <select name="department_id" id="edit_department_id"
+                                class="form-select form-select-sm @error('department_id') is-invalid @enderror" required>
+                            <option value="">Выберите отдел</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="invalid-feedback">Пожалуйста, выберите отдел</div>
+                    </div>
 
-                    totalHours += value;
-                });
+                    <div class="alert alert-info py-1 px-2 small" role="alert">
+                        <i class="fas fa-info-circle me-1"></i>
+                        ID сотрудника: <strong id="edit_employee_id_display"></strong>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="editEmployeeForm" class="btn btn-primary btn-sm px-3 py-1">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                const totalDaysElement = row.querySelector('.total-days');
-                const totalHoursElement = row.querySelector('.total-hours');
-
-                if (totalDaysElement) {
-                    totalDaysElement.textContent = workingDays;
-                }
-                if (totalHoursElement) {
-                    totalHoursElement.textContent = totalHours.toFixed(1);
-                }
-            });
-        }
-
-        // Обработчики для часов
-        document.querySelectorAll('.hours-input').forEach(input => {
-            input.addEventListener('change', calculateWorkingDays);
-            input.addEventListener('input', calculateWorkingDays);
-            input.addEventListener('click', function() { this.select(); });
-        });
-
-        // Обработчики для причин
-        document.querySelectorAll('.reason-select').forEach(select => {
-            select.addEventListener('change', calculateWorkingDays);
-        });
-
-        // Инициализация подсчета
-        calculateWorkingDays();
-
-        // Подсветка сегодняшнего дня
-        const today = new Date();
-        const currentDay = today.getDate();
-        const currentMonth = today.getMonth() + 1;
-        const currentYear = today.getFullYear();
-
-        if (currentMonth == {{ $currentMonth }} && currentYear == {{ $currentYear }}) {
-            document.querySelectorAll('.day-header.today, .day-cell.today').forEach(el => {
-                el.classList.remove('today');
-            });
-
-            const reasonCellIndex = (currentDay * 2) + 1;
-            const hoursCellIndex = reasonCellIndex + 1;
-
-            document.querySelectorAll(`.day-cell.reason-cell:nth-child(${reasonCellIndex})`).forEach(cell => {
-                cell.classList.add('today');
-            });
-
-            document.querySelectorAll(`.day-cell.hours-cell:nth-child(${hoursCellIndex})`).forEach(cell => {
-                cell.classList.add('today');
-            });
-
-            const dayHeader = document.querySelector(`.day-header:nth-child(${currentDay + 1})`);
-            if (dayHeader) dayHeader.classList.add('today');
-        }
-
-        // Автоматическое открытие модалок при ошибках
-        @if(session('modal') == 'employee' || $errors->hasAny(['last_name', 'first_name', 'tab_number', 'department_id']))
-        var employeeModal = new bootstrap.Modal(document.getElementById('employeeModal'));
-        employeeModal.show();
-        @endif
-
-        @if(session('modal') == 'department' || $errors->has('name'))
-        var departmentModal = new bootstrap.Modal(document.getElementById('departmentModal'));
-        departmentModal.show();
-        @endif
-
-        // Hover эффект для строк
-        document.querySelectorAll('tbody tr').forEach(row => {
-            row.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#f8f9fa';
-            });
-            row.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = '';
-            });
-        });
-    });
-</script>
 </body>
 </html>

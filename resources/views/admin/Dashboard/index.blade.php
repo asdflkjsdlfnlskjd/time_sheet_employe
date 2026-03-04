@@ -11,14 +11,6 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <!-- ПОДКЛЮЧИТЕ Chart.js ЗДЕСЬ -->
     <script src=" {{asset('https://cdn.jsdelivr.net/npm/chart.js')}}" defer></script>
-    <style>
-        /* Добавьте эти стили для контейнера графика */
-        .chart-canvas-container {
-            width: 100%;
-            height: 400px;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body>
@@ -46,7 +38,19 @@
             @endphp
             {{ $initials }}
         </div>
+
+        <!-- Выпадающее меню при наведении -->
+        <div class="dropdown-menu-custom">
+            <form method="POST" action="{{ route('admin.logout') }}">
+                @csrf
+                <button type="submit" class="dropdown-item-custom">
+                    <i class="fas fa-sign-out-alt me-2"></i> Выйти
+                </button>
+            </form>
+        </div>
     </div>
+
+
 </header>
 
 <!-- TABS -->

@@ -26,6 +26,12 @@ Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('
 Route::post('/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
 Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('admin.departments.destroy');
 
+// Добавьте этот маршрут для обновления сотрудника
+Route::put('/employees/{employee}', [App\Http\Controllers\Main\MainController::class, 'update'])->name('admin.employees.update');
+
+// Или если хотите использовать resource
+Route::resource('employees', App\Http\Controllers\Main\MainController::class)->only(['update']);
+
 // Редирект
 Route::get('/', function () {
     return redirect()->route('admin.login');

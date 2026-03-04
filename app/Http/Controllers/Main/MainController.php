@@ -106,4 +106,53 @@ class MainController extends Controller
             'search'
         ));
     }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $employee = Employee::findOrFail($id);
+
+            $validated = $request->validate([
+                'last_name' => 'required|string|max:255',
+                'first_name' => 'required|string|max:255',
+                'middle_name' => 'nullable|string|max:255',
+                'tab_number' => 'required|string|unique:employees,tab_number,' . $id,
+                'department_id' => 'required|exists:departments,id',
+            ]);
+
+            $employee->update([
+                'last_name' => $validated['last_name'],
+                'first_name' => $validated['first_name'],
+                'middle_name' => $validated['middle_name'],
+                'tab_number' => $validated['tab_number'],
+                'department_id' => $validated['department_id'],
+            ]);
+
+            // Загружаем отдел для возврата названия
+            $employee->load('department');
+
+            return response()->json([
+                'success' => true,
+                'employee' => [
+                    'id' => $employee->id,
+                    'last_name' => $employee->last_name,
+                    'first_name' => $employee->first_name,
+                    'middle_name' => $employee->middle_name,
+                    'tab_number' => $employee->tab_number,
+                    'department_name' => $employee->department->name ?? 'Без отдела'
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка сервера: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
