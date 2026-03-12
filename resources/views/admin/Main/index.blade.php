@@ -142,7 +142,7 @@
 
     <!-- Filters -->
     <div class="filters-card">
-        <form method="GET" action="{{ route('admin.main.index') }}" class="filters-row">
+        <form method="GET" action="{{ route('admin.main.index') }}" class="filters-row" id="filter-form">
             <div class="filter-group">
                 <label class="filter-label">Период</label>
                 <select class="form-select form-select-sm" name="month">
@@ -174,12 +174,14 @@
                        placeholder="Введите имя сотрудника" value="{{ $search ?? '' }}">
             </div>
 
-            <div class="filter-group">
-                <button type="submit" class="btn btn-primary apply-btn">Применить</button>
+            <div class="filter-group d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm apply-btn">Применить</button>
+                <a href="{{ route('admin.main.index') }}" class="btn btn-secondary btn-sm reset-btn">
+                   Сбросить
+                </a>
             </div>
         </form>
     </div>
-
     <!-- Add Buttons -->
     <div class="add-buttons">
         <button class="btn btn-success p-2" data-bs-toggle="modal" data-bs-target="#employeeModal">

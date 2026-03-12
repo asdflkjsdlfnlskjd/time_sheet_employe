@@ -185,12 +185,60 @@ main {
 }
 
 .btn-purple {
-    background: #8b5cf6;
-    border: 1px solid #8b5cf6;
-    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    color: white;
     font-size: 14px;
     padding: 6px 16px;
     border-radius: 6px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-purple:hover {
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+    color: white;
+}
+
+.btn-purple:focus,
+.btn-purple:active {
+    background-color: #4a2a83 !important;
+    border-color: #4a2a83 !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+/* Кнопка сброса фильтров */
+.reset-btn {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: white;
+}
+
+.reset-btn:focus,
+.reset-btn:active {
+    background-color: #545b62 !important;
+    border-color: #4e555b !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+}
+
+.reset-btn i {
+    font-size: 0.9rem;
 }
 
 /* Фильтры */
@@ -393,21 +441,21 @@ td {
     box-shadow: 0 0 0 2px rgba(63, 102, 224, 0.1);
 }
 
-/* Сегодняшний день */
+/* Сегодняшний день - мягкий зеленый */
 .day-header.today {
-    background-color: rgba(63, 102, 224, 0.1);
+    background-color: rgba(46, 204, 113, 0.15);
 }
 
 .day-cell.today {
-    background-color: rgba(63, 102, 224, 0.1);
-    border-left: 1px solid rgba(108, 117, 125, 0.21);
-    border-right: 1px solid rgba(108, 117, 125, 0.21);
+    background-color: rgba(46, 204, 113, 0.1);
+    border-left: 1px solid rgba(46, 204, 113, 0.3);
+    border-right: 1px solid rgba(46, 204, 113, 0.3);
 }
 
 .day-cell.today .hours-input,
 .day-cell.today .reason-select {
-    background-color: #e3f2fd;
-    border-color: #3f66e0;
+    background-color: rgba(46, 204, 113, 0.08);
+    border-color: #2ecc71;
 }
 
 /* Выходные дни */
@@ -585,6 +633,18 @@ footer {
     font-size: 12px;
     height: 40px;
     border-top: 3px solid #dee2e6;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .filter-group.d-flex {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-group.d-flex .btn {
+        width: 100%;
+    }
 }
 
 /* Адаптивность */
