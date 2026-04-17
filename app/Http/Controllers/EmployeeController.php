@@ -12,7 +12,7 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         if (!Auth::check()) {
-            return redirect('/login');
+            return response()->json(['success' => false, 'message' => 'Не авторизован'], 401);
         }
 
         $admin = Auth::user();
@@ -36,15 +36,11 @@ class EmployeeController extends Controller
             $adminDepartmentId = $admin->employee->department_id ?? null;
 
             if (!$adminDepartmentId) {
-                return redirect()->back()
-                    ->with('error', 'У вас не назначен отдел. Обратитесь к супер-администратору.')
-                    ->withInput();
+                return response()->json(['success' => false, 'message' => 'У вас не назначен отдел']);
             }
 
             if ($request->department_id != $adminDepartmentId) {
-                return redirect()->back()
-                    ->with('error', 'Вы можете добавлять сотрудников только в свой отдел')
-                    ->withInput();
+                return response()->json(['success' => false, 'message' => 'Вы можете добавлять сотрудников только в свой отдел']);
             }
         }
 
@@ -52,8 +48,7 @@ class EmployeeController extends Controller
 
         Employee::create($validated);
 
-        return redirect('/main') // Вместо route('admin.main.index')
-        ->with('success', 'Сотрудник успешно добавлен');
+        return response()->json(['success' => true, 'message' => '✅ Сотрудник успешно добавлен']);
     }
 
     public function destroy($id)
@@ -78,5 +73,42 @@ class EmployeeController extends Controller
 
         return redirect('/main') // Вместо route('admin.main.index')
         ->with('success', 'Сотрудник успешно удален');
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!Auth::check()) {
+            return response()->json(['success' => false, 'message' => 'Не авторизован'], 401);
+        }
+
+        $admin = Auth::user();
+        $employee = Employee::findOrFail($id);
+
+        // Проверка доступа
+        if ($admin->role !== 'super_admin') {
+            $adminDepartmentId = $admin->employee->department_id ?? null;
+
+            if (!$adminDepartmentId || $employee->department_id != $adminDepartmentId) {
+                return response()->json(['success' => false, 'message' => 'Вы не можете редактировать этого сотрудника']);
+            }
+
+            if ($request->department_id && $request->department_id != $adminDepartmentId) {
+                return response()->json(['success' => false, 'message' => 'Вы можете редактировать сотрудников только в своем отделе']);
+            }
+        }
+
+        $rules = [
+            'last_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'tab_number' => 'required|string|min:2|max:6|unique:employees,tab_number,' . $id,
+            'department_id' => 'required|exists:departments,id',
+        ];
+
+        $validated = $request->validate($rules);
+
+        $employee->update($validated);
+
+        return response()->json(['success' => true, 'message' => '✅ Сотрудник успешно обновлен']);
     }
 }

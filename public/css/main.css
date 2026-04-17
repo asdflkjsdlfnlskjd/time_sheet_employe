@@ -4,6 +4,90 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* ========== СТИЛИ МОДАЛЬНЫХ ОКОН ========== */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #3f66e0 0%, #2d4db3 100%);
+    color: white;
+    border: none;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 24px;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.3px;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 16px 24px;
+    background: #f9fafb;
+    border-radius: 0 0 12px 12px;
+}
+
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
+}
+
+/* ========== СТИЛИ ИКОНОК ========== */
+.modal-header .fa-icon,
+.modal-body .fa-icon,
+.btn .fa-icon {
+    margin-right: 6px;
+}
+
+/* Кнопки в модали */
+.modal-footer .btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modal-footer .btn-primary {
+    background: linear-gradient(135deg, #3f66e0 0%, #2d4db3 100%);
+    border: none;
+}
+
+.modal-footer .btn-primary:hover {
+    background: linear-gradient(135deg, #2d4db3 0%, #1f3380 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(63, 102, 224, 0.3);
+}
+
+.modal-footer .btn-secondary {
+    background: #e5e7eb;
+    border: none;
+    color: #374151;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: #d1d5db;
+    transform: translateY(-2px);
+}
+
 /* Шапка */
 .header {
     background: #3f66e0;
@@ -342,6 +426,12 @@ td.sticky-col {
     border-right: 1px solid #e5e7eb;
 }
 
+/* Первый день после sticky столбца - добавляем отступ слева */
+.table-wrapper table > thead > tr > th:nth-child(2),
+.table-wrapper table > tbody > tr > td:nth-child(2) {
+    padding-left: 5px !important;
+}
+
 td {
     border-bottom: 1px solid #e5e7eb;
 }
@@ -503,6 +593,30 @@ td {
     font-size: 12px;
     color: #6b7280;
     font-style: italic;
+}
+
+/* ========== ВЫДЕЛЕНИЕ РУКОВОДИТЕЛЕЙ ========== */
+.manager-row {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
+    transition: all 0.3s ease;
+}
+
+.manager-row:hover {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.04) 100%);
+    box-shadow: inset 0 0 8px rgba(59, 130, 246, 0.15);
+}
+
+.manager-info .employee-name {
+    color: #6581EE;
+    font-weight: 600;
+}
+
+.manager-label {
+    font-size: 11px;
+    color: #3B82F6;
+    font-weight: 500;
+    margin-left: 4px;
+    opacity: 0.8;
 }
 
 /* Кнопки действий */
@@ -704,5 +818,157 @@ footer {
 
     .day-header .week-day {
         font-size: 10px;
+    }
+}
+
+/* ========== ЛЕГЕНДА С ФИКСИРОВАНИЕМ ========== */
+.legend-card {
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Фиксированная легенда вне таблицы скролла */
+.legend-card.legend-fixed {
+    position: relative;
+    z-index: 10;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-top: 2px solid #e5e7eb;
+    border-bottom: none;
+    display: block;
+    width: 100%;
+}
+
+.legend-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.legend-badge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.legend-label {
+    font-size: 14px;
+    color: #555;
+}
+
+/* ========== СТИЛИ ПАГИНАЦИИ ========== */
+.pagination {
+    margin-top: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    color: #3f66e0;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #ffffff;
+    text-decoration: none;
+}
+
+.page-link:hover {
+    background-color: #3f66e0;
+    color: white;
+    border-color: #3f66e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(63, 102, 224, 0.3);
+}
+
+.page-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(63, 102, 224, 0.1);
+}
+
+.page-item.active .page-link {
+    background-color: #3f66e0;
+    border-color: #3f66e0;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(63, 102, 224, 0.3);
+}
+
+.page-item.active .page-link:hover {
+    background-color: #2d4db3;
+    border-color: #2d4db3;
+}
+
+.page-item.disabled .page-link {
+    color: #999;
+    border-color: #dee2e6;
+    background-color: #f5f7fb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.page-item.disabled .page-link:hover {
+    background-color: #f5f7fb;
+    color: #999;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Стили для текста пагинации (показ количества страниц) */
+.pagination-info {
+    text-align: center;
+    margin: 15px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+/* Адаптивная пагинация для мобильных */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 4px;
+        margin-top: 20px;
+        margin-bottom: 15px;
+    }
+
+    .page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .page-link span:not(.sr-only) {
+        display: none;
+    }
+
+    .page-item.active span {
+        display: inline-block;
     }
 }

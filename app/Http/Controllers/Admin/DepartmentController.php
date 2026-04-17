@@ -13,14 +13,13 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         if (!Auth::check()) {
-            return redirect('/login');
+            return response()->json(['success' => false, 'message' => 'Не авторизован'], 401);
         }
 
         $admin = Auth::user();
 
         if ($admin->role !== 'super_admin') {
-            return redirect()->back()
-                ->with('error', 'Только супер-администратор может создавать отделы');
+            return response()->json(['success' => false, 'message' => 'Только супер-администратор может создавать отделы']);
         }
 
         $validated = $request->validate([
@@ -30,8 +29,7 @@ class DepartmentController extends Controller
 
         Department::create($validated);
 
-        return redirect('/main') // Вместо route('admin.main.index')
-        ->with('success', 'Отдел успешно создан');
+        return response()->json(['success' => true, 'message' => '✅ Отдел успешно создан']);
     }
 
     public function destroy($id)

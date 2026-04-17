@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест JavaScript</title>
+</head>
+<body>
+    <h1>Проверка JavaScript</h1>
+    
+    <button id="testBtn">Нажмите меня</button>
+    <div id="result"></div>
+    
+    <script>
+        console.log('📌 JavaScript загружен');
+        
+        const btn = document.getElementById('testBtn');
+        if (btn) {
+            console.log('✅ Кнопка найдена');
+            btn.addEventListener('click', function() {
+                console.log('✅ Клик обработан');
+                document.getElementById('result').innerHTML = '<p style="color: green; font-size: 20px;">✅ JavaScript работает!</p>';
+            });
+        } else {
+            console.log('❌ Кнопка не найдена');
+        }
+    </script>
+</body>
+</html>

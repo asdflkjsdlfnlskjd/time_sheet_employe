@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Отладка дня 1</title>
+    <script>
+        window.onload = function() {
+            // Проверяем селекты и инпуты для дня 1
+            const day1Selects = document.querySelectorAll('[data-day="1"]');
+            console.log('Селекты/инпуты для дня 1:', day1Selects.length);
+            
+            // Группируем по типам
+            let selectCount = 0, inputCount = 0;
+            let issues = [];
+            
+            day1Selects.forEach((el, idx) => {
+                if (el.tagName === 'SELECT') {
+                    selectCount++;
+                    console.log(`  SELECT ${idx}: class=${el.className}, employee=${el.dataset.employee}`);
+                    if (!el.value) {
+                        issues.push(`SELECT ${idx}: нет значения`);
+                    }
+                } else if (el.tagName === 'INPUT') {
+                    inputCount++;
+                    console.log(`  INPUT ${idx}: type=${el.type}, value=${el.value}, employee=${el.dataset.employee}`);
+                    if (!el.value && el.type === 'number') {
+                        issues.push(`INPUT ${idx}: пусто значение`);
+                    }
+                }
+            });
+            
+            console.log(`\nИтого для дня 1:`);
+            console.log(`- Селектов (status): ${selectCount}`);
+            console.log(`- Инпутов (hours): ${inputCount}`);
+            
+            if (issues.length > 0) {
+                console.warn('⚠️ ПРОБЛЕМЫ:', issues);
+            } else {
+                console.log('✅ Структура OK');
+            }
+            
+            // Проверяем день 2 для сравнения
+            const day2Selects = document.querySelectorAll('[data-day="2"]');
+            console.log(`\nДля дня 2 найдено элементов: ${day2Selects.length}`);
+            
+            // Проверяем, могут ли быть проблемы с querySelector
+            console.log('\nПроверка querySelector для первого инпута дня 1:');
+            const firstRow = document.querySelector('tbody tr');
+            if (firstRow) {
+                const sel = firstRow.querySelector('.reason-select[data-day="1"]');
+                const inp = firstRow.querySelector('.hours-input[data-day="1"]');
+                console.log('- SELECT найден:', !!sel, sel ? sel.value : 'N/A');
+                console.log('- INPUT найден:', !!inp, inp ? inp.value : 'N/A');
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Откройте консоль браузера (F12)</h1>
+    <p>Результаты отладки будут в Console tab</p>
+    <p id="status">Проверка структуры дня 1...</p>
+    <script>
+        // Дополнительная информация
+        document.getElementById('status').innerHTML = `
+            <strong>Информация:</strong><br>
+            - Если в консоли видно "Селектов (status): 0" - проблема с HTML<br>
+            - Если видно "Селектов (status): 10" но не работают - проблема в JavaScript<br>
+            - Если видно "SELECT найден: false" - проблема с селекторами
+        `;
+    </script>
+</body>
+</html>

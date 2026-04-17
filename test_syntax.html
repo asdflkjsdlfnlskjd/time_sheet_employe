@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест JavaScript</title>
+</head>
+<body>
+<button id="testBtn">Тест кнопки</button>
+<div id="result"></div>
+
+<script>
+// Проверка, что скрипт загружается
+console.log('✅ Скрипт загружен');
+
+document.getElementById('testBtn').addEventListener('click', function() {
+    console.log('✅ Кнопка нажата!');
+    document.getElementById('result').innerHTML = '✅ Кнопка работает!';
+});
+
+console.log('✅ Слушатель добавлен');
+</script>
+</body>
+</html>
