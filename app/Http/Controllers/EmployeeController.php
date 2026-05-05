@@ -48,7 +48,7 @@ class EmployeeController extends Controller
 
         Employee::create($validated);
 
-        return response()->json(['success' => true, 'message' => '✅ Сотрудник успешно добавлен']);
+        return response()->json(['success' => true, 'message' => 'Сотрудник успешно добавлен']);
     }
 
     public function destroy($id)
@@ -109,6 +109,6 @@ class EmployeeController extends Controller
 
         $employee->update($validated);
 
-        return response()->json(['success' => true, 'message' => '✅ Сотрудник успешно обновлен']);
+        return response()->json(['success' => true, 'message' => 'Сотрудник успешно обновлен']);
     }
 }

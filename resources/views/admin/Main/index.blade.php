@@ -8,6 +8,52 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/main.css') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <style>
+        /* Плавная анимация появления модального окна */
+        .modal {
+            animation: modalBackdropFadeIn 0.25s ease-out;
+        }
+        
+        .modal.fade .modal-dialog {
+            animation: modalSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        @keyframes modalBackdropFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(0, -30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+        }
+        
+        /* Плавное закрытие модального окна */
+        .modal.fade.hide .modal-dialog {
+            animation: modalSlideOut 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(0, -20px) scale(0.95);
+            }
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="../../../../js/main.js"></script>
 </head>
@@ -16,7 +62,9 @@
 <!-- HEADER -->
 <header class="header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
-        <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        <a href="{{ route('admin.main.index') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        </a>
     </div>
 
     <div class="persons d-flex align-items-center gap-3 p-4">
@@ -38,9 +86,12 @@
             {{ $initials }}
         </div>
         <div class="dropdown-menu-custom">
+            <a href="{{ route('admin.profile.edit') }}" class="dropdown-item-custom profile-item">
+                <i class="fas fa-user me-2"></i> Профиль
+            </a>
             <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
-                <button type="submit" class="dropdown-item-custom">
+                <button type="submit" class="dropdown-item-custom logout-item">
                     <i class="fas fa-sign-out-alt me-2"></i> Выйти
                 </button>
             </form>
@@ -91,7 +142,7 @@
 
     @if(session('import_errors') && count(session('import_errors')) > 0)
         <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <strong>📋 Ошибки импорта:</strong>
+            <strong>Ошибки импорта:</strong>
             <ul class="mb-0 small mt-2">
                 @foreach(array_slice(session('import_errors'), 0, 10) as $error)
                     <li>{{ $error }}</li>
@@ -120,7 +171,7 @@
         <button class="btn btn-secondary btn-sm" id="importBtn" data-bs-toggle="modal" data-bs-target="#importModal">
             <i class="fas fa-file-import me-1"></i> Импорт
         </button>
-        <a href="{{ route('admin.main.export', ['month' => $currentMonth, 'year' => $currentYear]) }}" class="btn btn-secondary btn-sm">
+        <a href="{{ route('admin.main.export', ['month' => $currentMonth, 'year' => $currentYear, 'format' => 'xlsx']) }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-file-export me-1"></i> Экспорт
         </a>
         <button class="btn btn-primary btn-sm" id="saveTimeRecordsBtn">
@@ -337,10 +388,11 @@
             </div>
         </div>
         
-        <!-- Пагинация -->
-        <nav aria-label="Page navigation" class="d-flex justify-content-center mt-4">
-            {{ $employees->appends(request()->query())->links('pagination::bootstrap-5') }}
-        </nav>
+        @if($employees->hasPages())
+            <nav aria-label="Page navigation" class="d-flex justify-content-center mt-4">
+                {{ $employees->appends(request()->query())->links('pagination::bootstrap-5') }}
+            </nav>
+        @endif
     
     </div>
 </main>
@@ -402,7 +454,7 @@ document.getElementById('saveTimeRecordsBtn').addEventListener('click', function
     
     // Если день 1 пуст, может быть проблема с форматом data-day
     if (day1Selects.length === 0) {
-        console.warn('⚠️ День 1 не найден с [data-day="1"]');
+        console.warn('День 1 не найден с [data-day="1"]');
         // Проверяем, может быть это "01"?
         const day01Selects = table.querySelectorAll('[data-day="01"]');
         console.log(`День 01 (с нулём): ${day01Selects.length} элементов`);
@@ -431,7 +483,7 @@ document.getElementById('saveTimeRecordsBtn').addEventListener('click', function
             // Логируем день 1 первой строки
             if (rowIdx === 0 && (day === '1' || day === 1)) {
                 const dVal = hoursInput ? hoursInput.value : 'НЕ НАЙДЕН';
-                console.log(` ✅ День 1: select.value=${select.value}, hours=${dVal}`);
+                console.log(`День 1: select.value=${select.value}, hours=${dVal}`);
             }
             
             if (hoursInput) {
@@ -465,12 +517,12 @@ document.getElementById('saveTimeRecordsBtn').addEventListener('click', function
     
     // Если есть ошибки валидации, показываем сообщение
     if (hasErrors) {
-        showNotificationSave('error', '⚠️ Проверьте данные: часы должны быть от 0 до 24');
+        showNotificationSave('error', 'Проверьте данные: часы должны быть от 0 до 24');
         return;
     }
     
     if (data.length === 0) {
-        showNotificationSave('error', '⚠️ Нет данных для сохранения');
+        showNotificationSave('error', 'Нет данных для сохранения');
         return;
     }
     
@@ -504,30 +556,30 @@ document.getElementById('saveTimeRecordsBtn').addEventListener('click', function
         console.log('Ответ сервера:', result);
         
         if (result.success) {
-            showNotificationSave('success', '✅ ' + result.message);
+            showNotificationSave('success', result.message);
             // Очищаем классы ошибок после успешного сохранения
             document.querySelectorAll('.is-invalid').forEach(el => {
                 el.classList.remove('is-invalid');
             });
         } else {
-            showNotificationSave('error', '❌ ' + (result.message || 'Ошибка при сохранении'));
+            showNotificationSave('error', result.message || 'Ошибка при сохранении');
         }
     })
     .catch(error => {
         console.error('Ошибка запроса:', error);
         
-        let errorMessage = '❌ Ошибка при сохранении данных';
+        let errorMessage = 'Ошибка при сохранении данных';
         
         if (error.status === 422) {
-            errorMessage = '❌ Ошибка валидации: ' + (error.data?.message || 'Некорректные данные');
+            errorMessage = 'Ошибка валидации: ' + (error.data?.message || 'Некорректные данные');
         } else if (error.status === 401) {
-            errorMessage = '❌ Сессия истекла. Обновите страницу';
+            errorMessage = 'Сессия истекла. Обновите страницу';
         } else if (error.status === 403) {
-            errorMessage = '❌ Нет прав доступа для сохранения';
+            errorMessage = 'Нет прав доступа для сохранения';
         } else if (error.status === 500) {
-            errorMessage = '❌ Внутренняя ошибка сервера';
+            errorMessage = 'Внутренняя ошибка сервера';
         } else if (error instanceof TypeError) {
-            errorMessage = '❌ Ошибка сетевого соединения';
+            errorMessage = 'Ошибка сетевого соединения';
         }
         
         showNotificationSave('error', errorMessage);
@@ -706,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     @csrf
                     
                     <div class="alert alert-info mb-3">
-                        <strong>ℹ️ Формат файла:</strong><br>
+                        <strong>Формат файла:</strong><br>
                         CSV-файл с красиво оформленным табелем, экспортированным из этой системы. 
                         Excel автоматически отформатирует его. Легенда статусов включена в файл.
                     </div>
@@ -715,18 +767,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label for="importMonth" class="form-label">Месяц *</label>
                         <select class="form-select" id="importMonth" name="month" required>
                             <option value="">Выберите месяц</option>
-                            <option value="1" {{ now()->month == 1 ? 'selected' : '' }}>Январь</option>
-                            <option value="2" {{ now()->month == 2 ? 'selected' : '' }}>Февраль</option>
-                            <option value="3" {{ now()->month == 3 ? 'selected' : '' }}>Март</option>
-                            <option value="4" {{ now()->month == 4 ? 'selected' : '' }}>Апрель</option>
-                            <option value="5" {{ now()->month == 5 ? 'selected' : '' }}>Май</option>
-                            <option value="6" {{ now()->month == 6 ? 'selected' : '' }}>Июнь</option>
-                            <option value="7" {{ now()->month == 7 ? 'selected' : '' }}>Июль</option>
-                            <option value="8" {{ now()->month == 8 ? 'selected' : '' }}>Август</option>
-                            <option value="9" {{ now()->month == 9 ? 'selected' : '' }}>Сентябрь</option>
-                            <option value="10" {{ now()->month == 10 ? 'selected' : '' }}>Октябрь</option>
-                            <option value="11" {{ now()->month == 11 ? 'selected' : '' }}>Ноябрь</option>
-                            <option value="12" {{ now()->month == 12 ? 'selected' : '' }}>Декабрь</option>
+                            @foreach($months as $num => $name)
+                                <option value="{{ $num }}" {{ now()->month == $num ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -748,12 +793,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <div id="importHelp" class="alert alert-secondary small mt-3">
                     <strong>Подсказка:</strong><br>
-                    1. Экспортируйте табель из системы<br>
+                    1. <a href="/import_template.xlsx" class="btn btn-sm btn-outline-primary" download="import_template.xlsx">
+                        <i class="fas fa-download me-1"></i>Скачать шаблон импорта
+                    </a><br><br>
                     2. Отредактируйте данные в Excel<br>
                     3. Сохраните как CSV или XLSX<br>
                     4. Загрузите файл обратно<br>
                     <br>
-                    ⚠️ Существующие данные за выбранный месяц будут перезаписаны!
+                    Внимание: существующие данные за выбранный месяц будут перезаписаны.
                 </div>
             </div>
             <div class="modal-footer">
@@ -903,17 +950,17 @@ document.getElementById('saveEmployeeBtn').addEventListener('click', function() 
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('✅ ' + result.message);
+            alert(result.message);
             document.getElementById('employeeForm').reset();
             bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
             location.reload();
         } else {
-            alert('❌ ' + result.message);
+            alert(result.message);
         }
     })
     .catch(error => {
         console.error('Ошибка:', error);
-        alert('❌ Ошибка при сохранении');
+        alert('Ошибка при сохранении');
     });
 });
 
@@ -935,17 +982,17 @@ document.getElementById('saveDepartmentBtn').addEventListener('click', function(
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('✅ ' + result.message);
+            alert(result.message);
             document.getElementById('departmentForm').reset();
             bootstrap.Modal.getInstance(document.getElementById('departmentModal')).hide();
             location.reload();
         } else {
-            alert('❌ ' + result.message);
+            alert(result.message);
         }
     })
     .catch(error => {
         console.error('Ошибка:', error);
-        alert('❌ Ошибка при сохранении');
+        alert('Ошибка при сохранении');
     });
 });
 </script>

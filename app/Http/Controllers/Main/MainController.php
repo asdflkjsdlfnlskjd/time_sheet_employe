@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\TimeRecord;
 use App\Exports\TimeRecordExport;
 use App\Imports\TimeRecordImport;
+use App\Imports\TimeRecordImportNew;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,15 +33,23 @@ class MainController extends Controller
             return redirect('/login');
         }
 
-        // Данные для фильтров
-        $months = [
+        $currentYear = now()->year;
+        $availableMonths = [
             1 => 'Январь', 2 => 'Февраль', 3 => 'Март', 4 => 'Апрель',
             5 => 'Май', 6 => 'Июнь', 7 => 'Июль', 8 => 'Август',
             9 => 'Сентябрь', 10 => 'Октябрь', 11 => 'Ноябрь', 12 => 'Декабрь'
         ];
+        $months = array_filter(
+            $availableMonths,
+            fn ($_, $monthNumber) => $monthNumber <= now()->month,
+            ARRAY_FILTER_USE_BOTH
+        );
 
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
+        $currentMonth = (int) $request->get('month', now()->month);
+        if ($currentMonth < 1 || $currentMonth > now()->month) {
+            $currentMonth = now()->month;
+        }
+
         $daysInMonth = Carbon::createFromDate($currentYear, $currentMonth, 1)->daysInMonth;
         $currentDay = now()->day;
 
@@ -255,6 +264,7 @@ class MainController extends Controller
             $allowedStatuses = array_keys(TimeRecord::getStatusMap());
             $skippedCount = 0;
             $accessDeniedCount = 0;
+            $unchangedCount = 0;
 
             foreach ($data as $record) {
                 $employeeId = $record['employee_id'] ?? null;
@@ -311,6 +321,38 @@ class MainController extends Controller
                 ];
             }
 
+            // Фильтруем без изменений: обновляем только реально измененные записи,
+            // чтобы "Последние действия" показывали фактические правки.
+            if (!empty($recordsToUpsert)) {
+                $candidateEmployeeIds = collect($recordsToUpsert)->pluck('employee_id')->unique()->values();
+                $candidateDates = collect($recordsToUpsert)->pluck('date')->unique()->values();
+
+                $existingRecords = DB::table('time_records')
+                    ->whereIn('employee_id', $candidateEmployeeIds)
+                    ->whereIn('date', $candidateDates)
+                    ->get(['employee_id', 'date', 'status', 'hours'])
+                    ->keyBy(fn($r) => $r->employee_id . '|' . $r->date);
+
+                $filteredRecords = [];
+                foreach ($recordsToUpsert as $record) {
+                    $key = $record['employee_id'] . '|' . $record['date'];
+                    $existing = $existingRecords->get($key);
+
+                    if ($existing) {
+                        $sameStatus = (string)$existing->status === (string)$record['status'];
+                        $sameHours = (float)$existing->hours === (float)$record['hours'];
+                        if ($sameStatus && $sameHours) {
+                            $unchangedCount++;
+                            continue;
+                        }
+                    }
+
+                    $filteredRecords[] = $record;
+                }
+
+                $recordsToUpsert = $filteredRecords;
+            }
+
             if (empty($recordsToUpsert) && $recordCount > 0) {
                 $errorMsg = '';
                 if ($skippedCount > 0) {
@@ -318,6 +360,9 @@ class MainController extends Controller
                 }
                 if ($accessDeniedCount > 0) {
                     $errorMsg .= "Не имеете доступа к $accessDeniedCount записям. ";
+                }
+                if ($unchangedCount > 0) {
+                    $errorMsg .= "Без изменений: $unchangedCount. ";
                 }
                 
                 return response()->json([
@@ -339,16 +384,20 @@ class MainController extends Controller
                     'admin_id' => $admin->id,
                     'records_saved' => count($recordsToUpsert),
                     'skipped' => $skippedCount,
-                    'access_denied' => $accessDeniedCount
+                    'access_denied' => $accessDeniedCount,
+                    'unchanged' => $unchangedCount
                 ]);
             }
 
-            $successMessage = "✅ Сохранено " . count($recordsToUpsert) . " записей";
+            $successMessage = "Сохранено " . count($recordsToUpsert) . " записей";
             if ($skippedCount > 0) {
                 $successMessage .= " (пропущено $skippedCount)";
             }
             if ($accessDeniedCount > 0) {
                 $successMessage .= " (без доступа $accessDeniedCount)";
+            }
+            if ($unchangedCount > 0) {
+                $successMessage .= " (без изменений $unchangedCount)";
             }
 
             return response()->json([
@@ -356,7 +405,8 @@ class MainController extends Controller
                 'message' => $successMessage,
                 'saved' => count($recordsToUpsert),
                 'skipped' => $skippedCount,
-                'access_denied' => $accessDeniedCount
+                'access_denied' => $accessDeniedCount,
+                'unchanged' => $unchangedCount
             ]);
             
         } catch (\Exception $e) {
@@ -553,6 +603,7 @@ class MainController extends Controller
             $currentMonth = $request->get('month', now()->month);
             $currentYear = $request->get('year', now()->year);
             $departmentId = $request->get('department', 'all');
+            $format = $request->get('format', 'xlsx'); // xlsx по умолчанию
 
             // Получаем сотрудников с фильтрацией по правам доступа
             $query = Employee::with('department');
@@ -574,9 +625,15 @@ class MainController extends Controller
                 return redirect()->back()->with('error', 'Нет сотрудников для экспорта');
             }
 
-            // Используем Export класс с CSV форматом
+            // Используем Export класс
             $exporter = new TimeRecordExport($currentMonth, $currentYear, $departmentId, $employees);
-            $exporter->toCsv();
+            
+            // Вызываем нужный метод в зависимости от формата
+            if ($format === 'csv') {
+                $exporter->toCsv();
+            } else {
+                $exporter->toXlsx();
+            }
 
         } catch (\Exception $e) {
             \Log::error('Export error', [
@@ -593,6 +650,9 @@ class MainController extends Controller
     public function importExcel(Request $request)
     {
         try {
+            // Объемный импорт XLSX может занимать больше 30 секунд.
+            @set_time_limit(300);
+
             $admin = Auth::user();
             if (!$admin) {
                 return redirect('/login');
@@ -609,22 +669,33 @@ class MainController extends Controller
             $year = $request->get('year');
             $file = $request->file('csv_file');
             
-            // Сохраняем файл временно
-            $path = $file->store('imports');
-            $filepath = storage_path('app/' . $path);
+            // Создаем директорию перед сохранением файла
+            $importsDir = storage_path('app' . DIRECTORY_SEPARATOR . 'imports');
+            if (!is_dir($importsDir)) {
+                mkdir($importsDir, 0755, true);
+            }
             
-            // Создаем директорию если её нет
-            @mkdir(dirname($filepath), 0755, true);
+            // Сохраняем файл с полным путем
+            $filename = 'import_' . time() . '_' . $file->getClientOriginalName();
+            $file->move($importsDir, $filename);
+            $filepath = $importsDir . DIRECTORY_SEPARATOR . $filename;
+            
+            // Проверяем, что файл существует
+            if (!file_exists($filepath)) {
+                throw new \Exception('Файл не был сохранен. Путь: ' . $filepath);
+            }
 
-            // Используем Import класс
-            $importer = new TimeRecordImport($filepath, $month, $year);
+            // Используем Import класс (с поддержкой XLSX и CSV)
+            $importer = new TimeRecordImportNew($filepath, $month, $year);
             $result = $importer->import();
 
             // Удаляем загруженный файл
             @unlink($filepath);
 
             // Формируем сообщение об результате
-            $message = "✅ Импорт завершен. Загружено: {$result['imported']} записей.";
+            $employeesProcessed = $result['employees_processed'] ?? 0;
+            $employeesCreated = $result['employees_created'] ?? 0;
+            $message = "Импорт завершен. Сотрудников обработано: {$employeesProcessed}. Создано сотрудников: {$employeesCreated}. Записей табеля: {$result['imported']}.";
             
             if ($result['skipped'] > 0) {
                 $message .= " Пропущено: {$result['skipped']}.";
@@ -632,12 +703,12 @@ class MainController extends Controller
 
             $successType = $result['errors'] ? 'warning' : 'success';
 
-            return redirect()->back()
+            return redirect()->route('admin.main.index')
                 ->with($successType, $message)
                 ->with('import_errors', $result['errors']);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()
+            return redirect()->route('admin.main.index')
                 ->withErrors($e->errors())
                 ->with('error', 'Ошибка валидации');
 
@@ -646,7 +717,49 @@ class MainController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return redirect()->back()->with('error', 'Ошибка при импорте: ' . $e->getMessage());
+            return redirect()->route('admin.main.index')->with('error', 'Ошибка при импорте: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Скачивает шаблон для импорта
+     */
+    public function downloadImportTemplate()
+    {
+        try {
+            // Find the latest import template file
+            $importsDir = storage_path('app/imports');
+            
+            if (!is_dir($importsDir)) {
+                return redirect()->back()->with('error', 'Шаблон файла не найден. Пожалуйста, обратитесь к администратору.');
+            }
+
+            $files = array_filter(
+                scandir($importsDir),
+                fn($f) => strpos($f, 'import_') === 0 && strpos($f, '.xlsx') !== false
+            );
+
+            if (empty($files)) {
+                return redirect()->back()->with('error', 'Шаблон файла не найден. Пожалуйста, создайте его через команду: php artisan import:generate');
+            }
+
+            // Get the latest file
+            $filenames = array_values($files);
+            rsort($filenames);
+            $latestFile = $filenames[0];
+            $filepath = $importsDir . '/' . $latestFile;
+
+            if (!file_exists($filepath)) {
+                return redirect()->back()->with('error', 'Файл шаблона не найден.');
+            }
+
+            return response()->download($filepath, 'template_import.xlsx');
+        } catch (\Exception $e) {
+            \Log::error('Download template error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Ошибка при скачивании шаблона: ' . $e->getMessage());
         }
     }
 
@@ -720,7 +833,7 @@ class MainController extends Controller
                 $created += count($batch);
             }
 
-            $message = "✅ Создано $created сотрудников";
+            $message = "Создано $created сотрудников";
 
             return redirect()->route('admin.main.index')->with('success', $message);
         } catch (\Exception $e) {

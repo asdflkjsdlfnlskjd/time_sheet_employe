@@ -29,7 +29,7 @@ class DepartmentController extends Controller
 
         Department::create($validated);
 
-        return response()->json(['success' => true, 'message' => '✅ Отдел успешно создан']);
+        return response()->json(['success' => true, 'message' => 'Отдел успешно создан']);
     }
 
     public function destroy($id)

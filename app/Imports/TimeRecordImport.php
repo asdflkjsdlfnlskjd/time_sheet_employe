@@ -6,6 +6,7 @@ use App\Models\TimeRecord;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TimeRecordImport
 {
@@ -28,6 +29,26 @@ class TimeRecordImport
      */
     public function import()
     {
+        // Проверяем существование файла
+        if (!file_exists($this->filepath)) {
+            $this->errors[] = "Файл не найден: {$this->filepath}";
+            return [
+                'imported' => 0,
+                'skipped' => 0,
+                'errors' => $this->errors
+            ];
+        }
+
+        // Проверяем доступность файла для чтения
+        if (!is_readable($this->filepath)) {
+            $this->errors[] = "Файл не доступен для чтения: {$this->filepath}";
+            return [
+                'imported' => 0,
+                'skipped' => 0,
+                'errors' => $this->errors
+            ];
+        }
+
         $records = [];
         $row = 0;
         

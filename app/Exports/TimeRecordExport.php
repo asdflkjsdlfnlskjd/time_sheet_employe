@@ -6,6 +6,10 @@ use App\Models\TimeRecord;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class TimeRecordExport
 {
@@ -109,7 +113,7 @@ class TimeRecordExport
     }
 
     /**
-     * Экспортирует в CSV формат с красивым форматированием для Excel
+     * Экспортирует в CSV формат с табуляцией (разделитель - Tab)
      */
     public function toCsv()
     {
@@ -126,8 +130,9 @@ class TimeRecordExport
         // UTF-8 BOM для правильного отображения в Excel
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
+        // Используем табуляцию в качестве разделителя
         foreach ($csvData as $row) {
-            fputcsv($output, $row, ',', '"');
+            fputcsv($output, $row, "\t", '"');
         }
 
         fclose($output);
@@ -135,10 +140,70 @@ class TimeRecordExport
     }
 
     /**
-     * Экспортирует в XLSX формат (через CSV)
+     * Экспортирует в XLSX формат с полными границами и форматированием
      */
     public function toXlsx()
     {
-        $this->toCsv();
+        $csvData = $this->generateCsv();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Табель');
+
+        // Определяем границы (все границы, тонкие)
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ];
+
+        // Добавляем данные в лист и применяем форматирование
+        $row = 1;
+        foreach ($csvData as $data) {
+            $column = 1;
+            foreach ($data as $value) {
+                $cell = $sheet->getCellByColumnAndRow($column, $row);
+                $cell->setValue($value);
+
+                // Центрируем текст
+                $cell->getStyle()->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true);
+
+                // Применяем границы
+                $cell->getStyle()->applyFromArray($borderStyle);
+
+                $column++;
+            }
+            $row++;
+        }
+
+        // Устанавливаем оптимальную ширину столбцов
+        foreach ($sheet->getColumnIterator() as $column) {
+            $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
+        }
+
+        // Устанавливаем высоту строк для лучшей читаемости
+        for ($i = 1; $i < $row; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight(25);
+        }
+
+        // Замораживаем первые 4 строки (заголовок)
+        $sheet->freezePane('A5');
+
+        // Генерируем файл
+        $filename = 'timesheet_' . $this->currentMonth . '_' . $this->currentYear . '_' . now()->format('Y-m-d_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $writer->save('php://output');
+        exit;
     }
 }

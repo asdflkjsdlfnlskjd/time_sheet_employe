@@ -142,7 +142,7 @@ class DashboardController extends Controller
     {
         $statusMap = TimeRecord::getStatusMap();
         
-        // Считаем по статусам
+        // Считаем по статусам (только дни с часами > 0 считаются отработанными)
         $present = 0;
         $absent = 0;
         $late = 0;
@@ -156,22 +156,31 @@ class DashboardController extends Controller
         foreach ($timeRecords as $record) {
             switch($record->status) {
                 case 'present':
-                    $present++;
-                    $totalHours += $record->hours;
-                    if ($record->hours > 8) {
-                        $overtimeHours += $record->hours - 8;
+                    // Считаем только если есть часы
+                    if ($record->hours > 0) {
+                        $present++;
+                        $totalHours += $record->hours;
+                        if ($record->hours > 8) {
+                            $overtimeHours += $record->hours - 8;
+                        }
                     }
                     break;
                 case 'absent':
                     $absent++;
                     break;
                 case 'late':
-                    $late++;
-                    $totalHours += $record->hours;
+                    // Считаем только если есть часы
+                    if ($record->hours > 0) {
+                        $late++;
+                        $totalHours += $record->hours;
+                    }
                     break;
                 case 'early_leave':
-                    $earlyLeave++;
-                    $totalHours += $record->hours;
+                    // Считаем только если есть часы
+                    if ($record->hours > 0) {
+                        $earlyLeave++;
+                        $totalHours += $record->hours;
+                    }
                     break;
                 case 'vacation':
                     $vacation++;
@@ -448,27 +457,36 @@ class DashboardController extends Controller
     private function getRecentActivities($admin)
     {
         $activities = [];
-        $processedEmployees = [];
 
-        // Последние записи о времени - берём больше чтобы найти разных сотрудников
+        // Получаем доступные сотрудников для админа
+        $employeeQuery = Employee::with('department');
+        if ($admin->role !== 'super_admin') {
+            $adminDeptId = $admin->employee->department_id ?? null;
+            if ($adminDeptId) {
+                $employeeQuery->where('department_id', $adminDeptId);
+            }
+        }
+        $employees = $employeeQuery->get();
+        $employeeIds = $employees->pluck('id')->toArray();
+
+        // Получаем последние обновленные записи (за последние 24 часа) 
+        // и показываем только те, которые реально содержат часы
         $timeRecords = TimeRecord::with('employee')
-            ->latest('updated_at')
-            ->limit(50)
+            ->whereIn('employee_id', $employeeIds)
+            ->where('updated_at', '>=', now()->subHours(24))
+            ->whereDate('date', '>=', now()->subDays(30))  // Но дата может быть от любого дня за последний месяц
+            ->orderBy('updated_at', 'desc')  // Сортируем только по времени обновления
             ->get();
 
         foreach ($timeRecords as $record) {
-            // Пропускаем если уже показали действие этого сотрудника
-            if (in_array($record->employee_id, $processedEmployees)) {
-                continue;
-            }
-
+            // Показываем все действия, включая обновления статуса
             $statusMap = TimeRecord::getStatusMap();
             $statusLabel = $statusMap[$record->status]['label'] ?? 'Неизвестно';
             
-            // Формируем детали с причиной если есть
-            $details = 'Дата: ' . $record->date->format('d.m.Y') . ' | Часов: ' . $record->hours;
+            // Формируем детали с актуальными часами
+            $details = 'Дата: ' . $record->date->format('d.m.Y') . ' | Часов: ' . round($record->hours, 1);
             if (!empty($record->notes)) {
-                $details .= ' | Причина: ' . $record->notes;
+                $details .= ' | Примечание: ' . $record->notes;
             }
             
             $activities[] = [
@@ -480,18 +498,11 @@ class DashboardController extends Controller
                 'details' => $details
             ];
 
-            $processedEmployees[] = $record->employee_id;
-
-            // Если набрали 5 действий от разных сотрудников - хватит
+            // Показываем максимум 5 действий
             if (count($activities) >= 5) {
                 break;
             }
         }
-
-        // Сортируем по дате (самые свежие первыми)
-        usort($activities, function($a, $b) {
-            return $b['date']->timestamp - $a['date']->timestamp;
-        });
 
         return $activities;
     }

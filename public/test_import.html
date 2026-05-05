@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование формы входа и импорта</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background-color: #f9f9f9;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .download-btn:hover { background-color: #218838; }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✓ Тестирование Системы Табеля</h1>
+
+        <div class="section">
+            <h2>1. Проверка Импорт файла</h2>
+            <p><strong>Статус:</strong> ✓ ГОТОВО</p>
+            <div class="status success">
+                ✅ XLSX шаблон для импорта успешно создан!
+            </div>
+            <p><strong>Что было сделано:</strong></p>
+            <ul>
+                <li>Создан Artisan команда <code>php artisan import:generate</code></li>
+                <li>Сгенерирован XLSX файл с 500 сотрудниками</li>
+                <li>Файл содержит примеры заполненных данных</li>
+                <li>Включена легенда статусов: П, ОТ, ОП, РУ, ОТП, БО, ВЫХ</li>
+            </ul>
+            <p><strong>Файл:</strong> <code>import_template.xlsx</code></p>
+            <a href="/import_template.xlsx" class="download-btn" download="import_template.xlsx">
+                📥 Скачать шаблон импорта
+            </a>
+        </div>
+
+        <div class="section">
+            <h2>2. Статусы в табеле</h2>
+            <p>Используйте следующие статусы при импорте:</p>
+            <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
+                <tr style="background-color: #f0f0f0;">
+                    <th>Короткий код</th>
+                    <th>Описание</th>
+                    <th>Пример</th>
+                </tr>
+                <tr>
+                    <td><strong>—</strong></td>
+                    <td>Присутствовал (Обычный день)</td>
+                    <td>—(8.5ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>ОТ</strong></td>
+                    <td>Отсутствовал</td>
+                    <td>ОТ(0ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>ОП</strong></td>
+                    <td>Опоздал</td>
+                    <td>ОП(7ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>РУ</strong></td>
+                    <td>Ранний уход</td>
+                    <td>РУ(6ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>ОТП</strong></td>
+                    <td>Отпуск</td>
+                    <td>ОТП(0ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>БО</strong></td>
+                    <td>Больничный</td>
+                    <td>БО(0ч)</td>
+                </tr>
+                <tr>
+                    <td><strong>ВЫХ</strong></td>
+                    <td>Выходной</td>
+                    <td>ВЫХ(0ч)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>3. Инструкции по импорту</h2>
+            <p><strong>Шаг 1:</strong> Скачайте шаблон импорта выше</p>
+            <p><strong>Шаг 2:</strong> Откройте файл в Excel и отредактируйте данные</p>
+            <p><strong>Шаг 3:</strong> Сохраните файл как CSV или XLSX</p>
+            <p><strong>Шаг 4:</strong> Зайдите в систему и нажмите "Импорт" в главном меню</p>
+            <p><strong>Шаг 5:</strong> Выберите месяц, год и загрузите файл</p>
+            <div class="status info">
+                ℹ️ Внимание: Существующие данные за выбранный месяц будут перезаписаны!
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Формат файла</h2>
+            <p>Файл имеет следующую структуру:</p>
+            <pre>
+Строка 1: Заголовок (Табель учета рабочего времени)
+Строка 2: Месяц и год
+Строка 3: Пустая
+Строка 4: Легенда статусов
+Строка 5: Заголовки таблицы
+Строка 6+: Данные сотрудников
+
+Столбцы:
+A - Фамилия
+B - Имя
+C - Отчество
+D - Табельный номер
+E - Отдел ID
+F-AK - Дни месяца (1-30/31)
+            </pre>
+        </div>
+
+        <div class="section">
+            <h2>5. Проверка входа</h2>
+            <p><strong>Если возникли проблемы с входом:</strong></p>
+            <ul>
+                <li>Убедитесь, что вы используете правильное имя пользователя и пароль</li>
+                <li>Проверьте, что сессия не истекла</li>
+                <li>Очистите кэш браузера (Ctrl+Shift+Delete)</li>
+                <li>Попробуйте другой браузер</li>
+            </ul>
+            <p><strong>Адрес входа:</strong> <a href="/login">/login</a></p>
+        </div>
+
+        <div class="section">
+            <h2>6. Сведения о системе</h2>
+            <div class="status info">
+                <p><strong>📊 Сгенерировано:</strong></p>
+                <ul>
+                    <li>500 уникальных сотрудников</li>
+                    <li>15,000 записей о рабочем времени</li>
+                    <li>Примеры заполнения для каждого дня месяца</li>
+                    <li>Реалистичное распределение статусов</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section" style="border-left-color: #ffc107;">
+            <h2>7. Команды CLI</h2>
+            <p>Если нужно пересоздать файл импорта, используйте команду:</p>
+            <pre><code>php artisan import:generate</code></pre>
+            <p>Команда генерирует новый файл с текущим месяцем и годом</p>
+        </div>
+    </div>
+</body>
+</html>

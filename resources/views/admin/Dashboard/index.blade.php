@@ -161,12 +161,59 @@
         
         .empty-state { text-align: center; padding: 40px 20px; color: #999; }
         .empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+        
+        /* Плавная анимация появления модального окна */
+        .modal {
+            animation: modalBackdropFadeIn 0.25s ease-out;
+        }
+        
+        .modal.fade .modal-dialog {
+            animation: modalSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        @keyframes modalBackdropFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(0, -30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+        }
+        
+        /* Плавное закрытие модального окна */
+        .modal.fade.hide .modal-dialog {
+            animation: modalSlideOut 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(0, -20px) scale(0.95);
+            }
+        }
     </style>
 </head>
 <body>
 <header class="header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
-        <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        <a href="{{ route('admin.main.index') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        </a>
     </div>
     <div class="persons d-flex align-items-center gap-3 p-4">
         <div class="text-end">
@@ -187,9 +234,12 @@
             {{ $initials }}
         </div>
         <div class="dropdown-menu-custom">
+            <a href="{{ route('admin.profile.edit') }}" class="dropdown-item-custom profile-item">
+                <i class="fas fa-user me-2"></i> Профиль
+            </a>
             <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
-                <button type="submit" class="dropdown-item-custom">
+                <button type="submit" class="dropdown-item-custom logout-item">
                     <i class="fas fa-sign-out-alt me-2"></i> Выйти
                 </button>
             </form>

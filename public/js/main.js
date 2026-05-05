@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let editModal = null;
 
     // Инициализация модального окна Bootstrap
-    const modalElement = document.getElementById('editEmployeeModal');
+    const modalElement = document.getElementById('employeeModal');
     if (modalElement) {
         editModal = new bootstrap.Modal(modalElement, {
             backdrop: 'static',
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Обработчик отправки формы
-    const editForm = document.getElementById('editEmployeeForm');
+    const editForm = document.getElementById('employeeForm');
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -130,8 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Находим кнопку отправки (ищем внутри формы или в модальном окне)
-            const submitBtn = document.querySelector('#editEmployeeModal button[type="submit"]');
+            // Находим кнопку отправки
+            const submitBtn = document.querySelector('#saveEmployeeBtn');
 
             // Сохраняем оригинальный текст кнопки
             let originalText = 'Сохранить';
@@ -141,34 +141,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = true;
             }
 
-            // Получаем ID сотрудника из URL
-            const urlParts = this.action.split('/');
-            const employeeId = urlParts[urlParts.length - 1];
+            // Получаем ID сотрудника из скрытого поля
+            const employeeId = document.getElementById('employeeId').value;
+            const firstName = document.getElementById('employeeFirstName').value;
+            const lastName = document.getElementById('employeeLastName').value;
+            const middleName = document.getElementById('employeeMiddleName').value;
+            const tabNumber = document.getElementById('employeeTabNumber').value;
+            const departmentId = document.getElementById('employeeDepartment').value;
 
-            if (!employeeId) {
-                showNotification('error', 'ID сотрудника не найден');
-                if (submitBtn) {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }
-                return;
+            const formData = {
+                first_name: firstName,
+                last_name: lastName,
+                middle_name: middleName,
+                tab_number: tabNumber,
+                department_id: departmentId
+            };
+
+            let url = '/employees';
+            let method = 'POST';
+
+            // Если редактирование
+            if (employeeId) {
+                url = `/employees/${employeeId}`;
+                method = 'PUT';
+                formData._method = 'PUT';
             }
 
-            // Собираем данные формы
-            const formData = new FormData(this);
-
-            // Добавляем метод PUT для Laravel
-            formData.append('_method', 'PUT');
-
             // Отправляем AJAX запрос
-            fetch(this.action, {
-                method: 'POST',
+            fetch(url, {
+                method: method,
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: formData
+                body: JSON.stringify(formData)
             })
                 .then(response => {
                     if (!response.ok) {
@@ -179,13 +187,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.success) {
                         // Закрываем модальное окно
-                        editModal.hide();
-
-                        // Обновляем данные в таблице
-                        updateEmployeeInTable(data.employee);
+                        if (editModal) {
+                            editModal.hide();
+                        }
 
                         // Показываем уведомление об успехе
-                        showNotification('success', 'Данные сотрудника успешно обновлены');
+                        showNotification('success', 'Данные сотрудника успешно сохранены');
+                        
+                        // Перезагружаем страницу после успеха
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     } else {
                         // Показываем ошибки
                         if (data.errors) {
@@ -205,12 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (error.errors) {
                         showValidationErrors(error.errors);
                         return;
-                    } else if (error.status === 404) {
-                        errorMessage = 'URL не найден. Проверьте маршрут.';
-                    } else if (error.status === 419) {
-                        errorMessage = 'Сессия истекла. Обновите страницу.';
-                    } else if (error.status === 500) {
-                        errorMessage = 'Внутренняя ошибка сервера';
                     }
 
                     showNotification('error', errorMessage);

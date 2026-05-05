@@ -56,7 +56,9 @@
 <body>
 <header class="header d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
-        <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        <a href="{{ route('admin.main.index') }}">
+            <img src="{{ asset('images/logo.png') }}" alt="TimeFlow" width="122" height="82">
+        </a>
     </div>
     <div class="persons d-flex align-items-center gap-3 p-4">
         <div class="text-end">
